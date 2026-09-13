@@ -213,19 +213,25 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
 
     @Override
     public void deconstructMultiBlock(World worldIn, BlockPos destroyedPos,
-                                    boolean blockBroken, IBlockState state) {
-
+                                      boolean blockBroken, IBlockState state) {
         if (!worldIn.isRemote) {
             snapshotDataBusesBeforeTeardown();
         }
-
+        viewDistance = 0;
+        lastSeed = -1;
+        lastButton = -1;
+        lastType = "";
+        printedButtonsThisSeed.clear();
+        printedSetSeed = -1;
+        buttonType.clear();
+        pendingReopenAfterSeedSync = false;
+        isOpen = false;
+        openProgress = 0;
         super.deconstructMultiBlock(worldIn, destroyedPos, blockBroken, state);
 
         if (!worldIn.isRemote) {
             restoreDataBusesAfterTeardown();
         }
-
-        viewDistance = 0;
     }
 
 

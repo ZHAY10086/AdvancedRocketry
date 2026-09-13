@@ -1,3 +1,6 @@
+2.2.15
+- Clear Observatory scan states on multiblock deconstruction
+
 Changelog 2.2.14
 - Added customocion="obsidian" for obsidian worlds
 - Added configurable warpship direction to Warp Controller
