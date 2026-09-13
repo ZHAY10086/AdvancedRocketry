@@ -999,6 +999,15 @@ public class DimensionManager implements IGalaxy {
                 DimensionManager.getInstance().getStar(star.getId()).setBlackHole(star.isBlackHole());
             }
 
+            // temp.dat deserialization attached separate DimensionProperties
+            // instances to each star. Rebuild this index from the XML objects,
+            // which are authoritative for planet definitions.
+            for (StellarBody loadedStar : DimensionManager.getInstance().getStars()) {
+                for (IDimensionProperties loadedPlanet : loadedStar.getPlanets()) {
+                    loadedStar.removePlanet(loadedPlanet);
+                }
+            }
+
             for (DimensionProperties properties : dimCouplingList.dims) {
 
                 //Register dimensions loaded by other mods if not already loaded
@@ -1016,14 +1025,18 @@ public class DimensionManager implements IGalaxy {
 
                 if (loadedPlanets.containsKey(properties.getId())) {
                     DimensionProperties loadedDim = (DimensionProperties) loadedPlanets.get(properties.getId());
-                    if (loadedDim != null) {
-                        properties.copyData(loadedDim);
-                    }
+                    if (loadedDim != null) {properties.copyData(loadedDim);}
                 }
                 if (properties.isNativeDimension)
                     DimensionManager.getInstance().registerDim(properties, properties.isNativeDimension);
-                //TODO: add properties fromXML
 
+                StellarBody canonicalStar = DimensionManager.getInstance().getStar(properties.getStarId());
+
+                if (canonicalStar == null) {
+                    throw new IllegalStateException("Missing star " + properties.getStarId() + " for DIMID " + properties.getId());
+                }
+
+                properties.setStar(canonicalStar);
 
                 if (properties.oreProperties != null) {
                     DimensionProperties loadedProps = DimensionManager.getInstance().getDimensionProperties(properties.getId());
