@@ -157,6 +157,7 @@ public class XMLPlanetLoader {
             for (StellarBody star2 : star.getSubStars()) {
                 Element nodeSubStar = doc.createElement(ELEMENT_STAR);
 
+                nodeSubStar.setAttribute(ATTR_NAME, star2.getName());
                 nodeSubStar.setAttribute(ATTR_BLACKHOLE, Boolean.toString(star2.isBlackHole()));
                 nodeSubStar.setAttribute(ATTR_BLACKHOLE_DISK_ANGLE, Float.toString(star2.diskAngle));
                 nodeSubStar.setAttribute(ATTR_TEMP, Integer.toString(star2.getTemperature()));
