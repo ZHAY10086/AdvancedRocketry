@@ -5,7 +5,7 @@
   - Show distance details in the GUI
   - Added configurable distance bonus for observatory in Space
 
-- Observatory now uses LV-configs default powerstate
+- Observatory and most multiblocks now uses LV-configs default powerstate
 - Distinguish AIR from missing planet filler and ocean blocks
 - Persist sub-star names across XML loading and saving
 - Make config XML authoritative when reset-from-XML is enabled
