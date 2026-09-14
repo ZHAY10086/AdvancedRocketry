@@ -462,35 +462,46 @@ Accepted values:
 Notes:
 - Used by world provider sky/fog color calculation
 
-#### `<skyRenderOverride>`
-Overrides AR's custom sky renderer for that world.
+### `<skyRenderOverride>`
+
+Disables Advanced Rocketry's custom sky renderer for this planet.
 
 ```xml
 <skyRenderOverride>true</skyRenderOverride>
 ```
 
 Accepted values:
-- `true`
-- `false`
+
+* `true` — disable AR's custom sky renderer for this planet
+* `false` — allow AR's custom sky renderer for this planet, subject to the global setting
+
+The default is `false` when the tag is omitted.
 
 Notes:
-- This tag only disables AR's custom planet sky for this planet
-- Also affected by the global client config option `planetSkyOverride`
-  - If `planetSkyOverride=false` in the config, AR's custom planet sky is already disabled globally and this tag has no additional effect
+
+* This is a per-planet disable option; it cannot force-enable AR's sky renderer.
+* If `planetSkyOverride=false`, AR's custom sky renderer is disabled globally and this tag has no additional effect.
 
 #### `<hasShading>`
-Controls planet decoration rendering override.
+
+Overrides whether AR draws additional visual effects on this planet when it is shown in the sky or planet interface.
 
 ```xml
 <hasShading>false</hasShading>
 ```
 
 Accepted values:
-- `true`
-- `false`
+
+* `true` — force-enable additional planet-rendering effects
+* `false` — force-disable additional planet-rendering effects
+
+When the tag is omitted, AR uses the default for that body type: enabled for normal planets and disabled for asteroid-type bodies.
 
 Notes:
-- Overrides whether decorators such as shadows / atmosphere-style planet rendering details should be shown
+
+* These effects include atmosphere glow, atmosphere overlays, and planet shading.
+* This setting does not affect biome decoration, terrain generation, ores, plants, trees, or structures.
+* The base planet texture and planetary rings are rendered independently.
 
 ### 6.2 Atmosphere, gravity, orbit, and rotation
 
