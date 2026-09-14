@@ -13,22 +13,18 @@ import java.util.List;
 
 public class GenLayerBiomePlanet extends GenLayer {
 
-    private static List<BiomeEntry> biomeEntries;
+    private final List<BiomeEntry> biomeEntries;
     int biomeLimiter = -1;
     private List<Biome> biomes;
 
-    public GenLayerBiomePlanet(long p_i2122_1_, GenLayer p_i2122_3_, WorldType worldType) {
-        super(p_i2122_1_);
-
-        this.parent = p_i2122_3_;
-
-        biomeEntries = new ArrayList<>();
-
+    public GenLayerBiomePlanet(long seed, GenLayer parent, WorldType worldType) {
+        this(seed, parent, worldType, new ArrayList<>());
     }
 
-    //Used to set the usableBiomes
-    public static synchronized void setupBiomesForUse(List<BiomeEntry> entries) {
-        biomeEntries = entries;
+    public GenLayerBiomePlanet(long seed, GenLayer parent, WorldType worldType, List<BiomeEntry> biomeEntries) {
+        super(seed);
+        this.parent = parent;
+        this.biomeEntries = biomeEntries;
     }
 
     /**
@@ -56,12 +52,11 @@ public class GenLayerBiomePlanet extends GenLayer {
     }
 
     protected BiomeEntry getWeightedBiomeEntry() {
-        if (biomeEntries == null || biomeEntries.isEmpty())
+        if (this.biomeEntries == null || this.biomeEntries.isEmpty()) {
             return new BiomeEntry(Biomes.OCEAN, 100);
-
-        List<BiomeEntry> biomeList = biomeEntries;
-        int totalWeight = WeightedRandom.getTotalWeight(biomeList);
+        }
+        int totalWeight = WeightedRandom.getTotalWeight(this.biomeEntries);
         int weight = nextInt(totalWeight);
-        return WeightedRandom.getRandomItem(biomeList, weight);
+        return WeightedRandom.getRandomItem(this.biomeEntries, weight);
     }
 }

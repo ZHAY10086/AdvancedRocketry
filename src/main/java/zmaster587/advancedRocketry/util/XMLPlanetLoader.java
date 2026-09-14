@@ -18,6 +18,7 @@ import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 import zmaster587.advancedRocketry.AdvancedRocketry;
 import zmaster587.advancedRocketry.api.ARConfiguration;
+import zmaster587.advancedRocketry.api.Constants;
 import zmaster587.advancedRocketry.api.dimension.IDimensionProperties;
 import zmaster587.advancedRocketry.api.dimension.solar.IGalaxy;
 import zmaster587.advancedRocketry.api.dimension.solar.StellarBody;
@@ -117,6 +118,7 @@ public class XMLPlanetLoader {
     private int currentNodeIndex;
     private int starId;
     private int offset;
+    private final Set<Integer> reservedDimensionIds = new HashSet<>();
 
     private HashMap<StellarBody, Integer> maxPlanetNumber = new HashMap<>();
     private HashMap<StellarBody, Integer> maxGasPlanetNumber = new HashMap<>();
@@ -157,6 +159,7 @@ public class XMLPlanetLoader {
             for (StellarBody star2 : star.getSubStars()) {
                 Element nodeSubStar = doc.createElement(ELEMENT_STAR);
 
+                nodeSubStar.setAttribute(ATTR_NAME, star2.getName());
                 nodeSubStar.setAttribute(ATTR_BLACKHOLE, Boolean.toString(star2.isBlackHole()));
                 nodeSubStar.setAttribute(ATTR_BLACKHOLE_DISK_ANGLE, Float.toString(star2.diskAngle));
                 nodeSubStar.setAttribute(ATTR_TEMP, Integer.toString(star2.getTemperature()));
@@ -464,46 +467,79 @@ public class XMLPlanetLoader {
         return maxGasPlanetNumber.get(body);
     }
 
+    private void prepareDimensionIds() {
+        reservedDimensionIds.clear();
+        NodeList nodes = doc.getElementsByTagName("*");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Node node = nodes.item(i);
+
+            if (!node.getNodeName().equalsIgnoreCase(ELEMENT_PLANET) || !node.hasAttributes()) {
+                continue;
+            }
+
+            Node dimensionIdNode = node.getAttributes().getNamedItem(ATTR_DIMID);
+
+            if (dimensionIdNode == null || dimensionIdNode.getNodeValue().isEmpty()) {
+                continue;
+            }
+
+            try {reservedDimensionIds.add(
+                        Integer.parseInt(dimensionIdNode.getNodeValue()));
+            } catch (NumberFormatException ignored) {
+                // Preserve the existing readPlanetFromNode error handling.
+            }
+        }
+    }
+    private int getNextFreeXmlDimensionId() {
+        int dimensionId =
+                DimensionManager.getInstance().getNextFreeDim(offset);
+
+        while (dimensionId != Constants.INVALID_PLANET && reservedDimensionIds.contains(dimensionId)) {
+            dimensionId = DimensionManager.getInstance().getNextFreeDim(dimensionId + 1);
+        }
+        if (dimensionId != Constants.INVALID_PLANET) {
+            reservedDimensionIds.add(dimensionId);
+            offset = dimensionId + 1;
+        }
+        return dimensionId;
+    }
+
     private List<DimensionProperties> readPlanetFromNode(Node planetNode, StellarBody star) {
         List<DimensionProperties> list = new ArrayList<>();
         Node planetPropertyNode = planetNode.getFirstChild();
 
+        NamedNodeMap attributes = planetNode.getAttributes();
+        Node nameNode = attributes == null ? null : attributes.getNamedItem(ATTR_NAME);
+        String planetName = nameNode == null || nameNode.getNodeValue().isEmpty()
+                        ? "Temp" : nameNode.getNodeValue();
 
-        DimensionProperties properties = new DimensionProperties(DimensionManager.getInstance().getNextFreeDim(offset));
+        Node dimensionIdNode = attributes == null ? null : attributes.getNamedItem(ATTR_DIMID);
+        final int dimensionId;
+        if (dimensionIdNode != null && !dimensionIdNode.getNodeValue().isEmpty()) {
+            try {
+                dimensionId = Integer.parseInt(dimensionIdNode.getNodeValue());
+            } catch (NumberFormatException e) {
+                AdvancedRocketry.logger.warn("Invalid DIMID specified for planet " + planetName);
+                return list;
+            }
+        } else {
+            dimensionId = getNextFreeXmlDimensionId();
+        }
+
+        DimensionProperties properties = new DimensionProperties(dimensionId);
+        properties.setName(planetName);
         list.add(properties);
-        offset++;//Increment for dealing with child planets
 
+        if (attributes != null) {
+            Node attributeNode = attributes.getNamedItem(ATTR_NATIVEDIM);
 
-        //Set name for dimension if exists
-        if (planetNode.hasAttributes()) {
-            Node nameNode = planetNode.getAttributes().getNamedItem("name");
-            if (nameNode != null && !nameNode.getNodeValue().isEmpty()) {
-                properties.setName(nameNode.getNodeValue());
-            }
-
-            nameNode = planetNode.getAttributes().getNamedItem(ATTR_DIMID);
-            if (nameNode != null && !nameNode.getNodeValue().isEmpty()) {
-                try {
-                    if (nameNode.getTextContent().isEmpty()) throw new NumberFormatException();
-                    properties.setId(Integer.parseInt(nameNode.getTextContent()));
-                    //We're not using the offset so decrement to prepare for next planet
-                    offset--;
-                } catch (NumberFormatException e) {
-                    AdvancedRocketry.logger.warn("Invalid DIMID specified for planet " + properties.getName()); //TODO: more detailed error msg
-                    list.remove(properties);
-                    offset--;
-                    return list;
-                }
-            }
-
-            nameNode = planetNode.getAttributes().getNamedItem(ATTR_NATIVEDIM);
-            if (nameNode != null) {
+            if (attributeNode != null) {
                 properties.isNativeDimension = false;
             }
 
-            nameNode = planetNode.getAttributes().getNamedItem(ATTR_ICON);
-            if (nameNode != null) {
-                properties.customIcon = nameNode.getTextContent();
+            attributeNode = attributes.getNamedItem(ATTR_ICON);
+            if (attributeNode != null) {
+                properties.customIcon = attributeNode.getTextContent();
             }
         }
 
@@ -1138,6 +1174,7 @@ public class XMLPlanetLoader {
         //Yes it's hacky but that's another reason why it's private
 
         offset = DimensionManager.dimOffset;
+        prepareDimensionIds();
         while (masterNode != null) {
             if (!masterNode.getNodeName().equals("star")) {
                 masterNode = masterNode.getNextSibling();
