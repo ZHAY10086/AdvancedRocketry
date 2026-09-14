@@ -29,6 +29,7 @@ import zmaster587.advancedRocketry.tile.hatch.TileDataBus;
 import zmaster587.advancedRocketry.util.Asteroid;
 import zmaster587.advancedRocketry.util.Asteroid.StackEntry;
 import zmaster587.advancedRocketry.util.IDataInventory;
+import zmaster587.libVulpes.Configuration;
 import zmaster587.libVulpes.LibVulpes;
 import zmaster587.libVulpes.api.LibVulpesBlocks;
 import zmaster587.libVulpes.block.BlockMeta;
@@ -116,6 +117,7 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
     private ModuleTab tabModule;
 
     public TileObservatory() {
+        enabled = Configuration.defaultMultiblockMachineEnabled;
         openProgress = 0;
         viewDistance = 0;
         lastButton = -1;
@@ -198,9 +200,7 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
         if (tile instanceof TileDataBus) {
             TileDataBus bus = (TileDataBus) tile;
             dataCables.add(bus);
-
             DataType type = bus.getDataObject().getDataType();
-
             // If bus already has a meaningful type, preserve it.
             if (type != null && type != DataType.UNDEFINED) {
                 bus.lockData(type);
@@ -232,6 +232,11 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
 
         if (!worldIn.isRemote) {
             restoreDataBusesAfterTeardown();
+        }
+        enabled = Configuration.defaultMultiblockMachineEnabled;
+        if (!worldIn.isRemote) {
+            markDirty();
+            worldIn.notifyBlockUpdate(pos, worldIn.getBlockState(pos), worldIn.getBlockState(pos), 3);
         }
     }
 
@@ -266,11 +271,9 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
             timeAlive = 0x1;
         }
 
-        if ((world.isRemote && isOpen) || (!world.isRemote && isRunning() && getMachineEnabled() && ((!world.isRaining() && world.canBlockSeeSky(pos.add(0, 1, 0)) && !world.isDaytime()) || world.provider.getDimension() == ARConfiguration.getCurrentConfig().spaceDimId))) {
-
+        if ((world.isRemote && isOpen) || (!world.isRemote && isComplete() && isRunning() && getMachineEnabled() && ((!world.isRaining() && world.canBlockSeeSky(pos.add(0, 1, 0)) && !world.isDaytime()) || world.provider.getDimension() == ARConfiguration.getCurrentConfig().spaceDimId))) {
             if (!isOpen) {
                 isOpen = true;
-
                 markDirty();
                 world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
             }
@@ -281,11 +284,9 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
 
             if (isOpen) {
                 isOpen = false;
-
                 markDirty();
                 world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
             }
-
             openProgress--;
         }
     }
@@ -297,8 +298,7 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
     }
 
     @Override
-    protected void processComplete() {
-    }
+    protected void processComplete() {}
 
     @Override
     public void resetCache() {
@@ -314,14 +314,12 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
     @Override
     @Nonnull
     public AxisAlignedBB getRenderBoundingBox() {
-
         return new AxisAlignedBB(pos.add(-5, -3, -5), pos.add(5, 3, 5));
     }
 
     @Override
     public List<BlockMeta> getAllowableWildCardBlocks() {
         List<BlockMeta> list = super.getAllowableWildCardBlocks();
-
         list.add(new BlockMeta(Blocks.IRON_BLOCK, BlockMeta.WILDCARD));
         list.addAll(TileMultiBlock.getMapping('P'));
         list.addAll(TileMultiBlock.getMapping('D'));
@@ -333,7 +331,6 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
         super.writeNetworkData(nbt);
         nbt.setInteger("openProgress", openProgress);
         nbt.setBoolean("isOpen", isOpen);
-
         nbt.setInteger("viewableDist", viewDistance);
         nbt.setLong("lastSeed", lastSeed);
         nbt.setInteger("lastButton", lastButton);
@@ -357,7 +354,6 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
         lastSeed = nbt.getLong("lastSeed");
         lastButton = nbt.getInteger("lastButton");
         lastType = nbt.getString("lastType");
-
         printedSetSeed = nbt.getLong("printedSetSeed");
         printedButtonsThisSeed.clear();
         int[] arr = nbt.getIntArray("printedButtons");
@@ -371,7 +367,6 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
         inv.writeToNBT(nbt);
-
         nbt.setLong("printedSetSeed", printedSetSeed);
         if (!printedButtonsThisSeed.isEmpty()) {
             int[] arr = printedButtonsThisSeed.stream().mapToInt(Integer::intValue).toArray();
@@ -384,7 +379,6 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
         inv.readFromNBT(nbt);
-
         printedSetSeed = nbt.getLong("printedSetSeed");
         printedButtonsThisSeed.clear();
         int[] arr = nbt.getIntArray("printedButtons");
@@ -479,13 +473,7 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
                         buttonList.add(new ModuleItemSlotButton(sx, sy, -2, this, s, tip));
                     }
 
-                    ModuleText amountText = new ModuleText(
-                            sx,
-                            sy,
-                            entry.midpoint + "\n+/- " + entry.variablility,
-                            0xFFFFFF,
-                            0.5f
-                    );
+                    ModuleText amountText = new ModuleText(sx, sy, entry.midpoint + "\n+/- " + entry.variablility, 0xFFFFFF, 0.5f);
                     amountText.setAlwaysOnTop(true);
                     buttonList.add(amountText);
 
@@ -493,14 +481,8 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
                 }
 
                 float time = asteroidSmol.timeMultiplier;
-
                 String timeLabel = LibVulpes.proxy.getLocalizedString("msg.observetory.text.time");
-                buttonList.add(new ModuleText(
-                        0,
-                        24 * (1 + (g / 2)),
-                        String.format("%s\n%.2fx", timeLabel, time),
-                        0x2f2f2f
-                ));
+                buttonList.add(new ModuleText(0, 24 * (1 + (g / 2)), String.format("%s\n%.2fx", timeLabel, time), 0x2f2f2f));
             }
 
             //Calculate Types
@@ -582,8 +564,6 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
                 modules.add(zmaster587.advancedRocketry.AdvancedRocketry.proxy
                     .createObservatoryAsteroidListPan(baseX, baseY, list2, sizeX, sizeY));
             }
-
-
 
             // ---- RIGHT composition pane: parent class (drag-only; wheel will be 0 after left consumes it)
             ModuleContainerPanYOnly panRight = new ModuleContainerPanYOnly(
