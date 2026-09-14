@@ -579,12 +579,15 @@ public class XMLPlanetLoader {
                 }
             } else if (planetPropertyNode.getNodeName().equalsIgnoreCase(ELEMENT_OCEANBLOCK)) {
                 String blockName = planetPropertyNode.getTextContent();
-                Block block = Block.REGISTRY.getObject(new ResourceLocation(blockName));
+                ResourceLocation blockId = new ResourceLocation(blockName);
+                Block block = Block.REGISTRY.getObject(blockId);
 
-                if (block == Blocks.AIR)
-                    AdvancedRocketry.logger.warn("Invalid ocean block: " + blockName); //TODO: more detailed error msg
-
-                properties.setOceanBlock(block.getDefaultState());
+                if (block == Blocks.AIR && !Block.REGISTRY.containsKey(blockId)) {
+                    AdvancedRocketry.logger.warn("Invalid ocean block: " + blockName);
+                    properties.setOceanBlock(null);
+                } else {
+                    properties.setOceanBlock(block.getDefaultState());
+                }
             } else if (planetPropertyNode.getNodeName().equalsIgnoreCase(ELEMENT_FILLERBLOCK)) {
                 String blockName = planetPropertyNode.getTextContent();
                 String[] splitBlockName = blockName.split(":");
@@ -592,21 +595,25 @@ public class XMLPlanetLoader {
                 if (splitBlockName.length < 2) {
                     AdvancedRocketry.logger.warn("Invalid resource location for fillerBlock: " + blockName);
                 } else {
-                    Block block = Block.REGISTRY.getObject(new ResourceLocation(splitBlockName[0], splitBlockName[1]));
+                    ResourceLocation blockId = new ResourceLocation(splitBlockName[0], splitBlockName[1]);
+
+                    Block block = Block.REGISTRY.getObject(blockId);
                     int metaValue = 0;
 
                     if (splitBlockName.length > 2) {
-                        try {
-                            metaValue = Integer.parseInt(splitBlockName[2]);
+                        try {metaValue = Integer.parseInt(splitBlockName[2]);
                         } catch (NumberFormatException e) {
-                            AdvancedRocketry.logger.warn("Invalid meta value location for fillerBlock: " + blockName + " using " + splitBlockName[2]);
+                            AdvancedRocketry.logger.warn("Invalid meta value location for fillerBlock: " + blockName + " using " + splitBlockName[2]
+                            );
                         }
                     }
 
-                    if (block == Blocks.AIR)
-                        AdvancedRocketry.logger.warn("Invalid filler block: " + blockName); //TODO: more detailed error msg
-
-                    properties.setStoneBlock(block.getStateFromMeta(metaValue));
+                    if (block == Blocks.AIR && !Block.REGISTRY.containsKey(blockId)) {
+                        AdvancedRocketry.logger.warn("Invalid filler block: " + blockName);
+                        properties.setStoneBlock(null);
+                    } else {
+                        properties.setStoneBlock(block.getStateFromMeta(metaValue));
+                    }
                 }
             } else if (planetPropertyNode.getNodeName().equalsIgnoreCase(ELEMENT_SKYCOLOR)) {
                 String[] colors = planetPropertyNode.getTextContent().split(",");

@@ -1734,32 +1734,32 @@ public class DimensionProperties implements Cloneable, IDimensionProperties {
         }
 
         if (nbt.hasKey("oceanBlock")) {
-            Block block = Block.REGISTRY.getObject(new ResourceLocation(nbt.getString("oceanBlock")));
-            if (block == Blocks.AIR) {
+            ResourceLocation blockId = new ResourceLocation(nbt.getString("oceanBlock"));
+            Block block = Block.REGISTRY.getObject(blockId);
+            if (block == Blocks.AIR && !Block.REGISTRY.containsKey(blockId)) {
                 oceanBlock = null;
             } else {
                 int meta = nbt.getInteger("oceanBlockMeta");
                 oceanBlock = block.getStateFromMeta(meta);
             }
-        } else
+        } else {
             oceanBlock = null;
+        }
 
         if (nbt.hasKey("fillBlock")) {
-            Block block = Block.REGISTRY.getObject(new ResourceLocation(nbt.getString("fillBlock")));
-            if (block == Blocks.AIR) {
+            ResourceLocation blockId = new ResourceLocation(nbt.getString("fillBlock"));
+            Block block = Block.REGISTRY.getObject(blockId);
+            if (block == Blocks.AIR && !Block.REGISTRY.containsKey(blockId)) {
                 fillerBlock = null;
             } else {
                 int meta = nbt.getInteger("fillBlockMeta");
                 fillerBlock = block.getStateFromMeta(meta);
             }
-        } else
+        } else {
             fillerBlock = null;
-
-
+        }
         readFromTechnicalNBT(nbt);
     }
-
-
 
     private void writeTechnicalNBT(NBTTagCompound nbt) {
         NBTTagList list;
@@ -1773,7 +1773,6 @@ public class DimensionProperties implements Cloneable, IDimensionProperties {
         }
 
         //Satellites
-
         if (!satellites.isEmpty()) {
             NBTTagCompound allSatelliteNBT = new NBTTagCompound();
             for (Entry<Long, SatelliteBase> entry : satellites.entrySet()) {
