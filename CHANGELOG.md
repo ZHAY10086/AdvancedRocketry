@@ -1,5 +1,12 @@
 2.2.15
-- Clear Observatory scan states on multiblock deconstruction
+- Clear Observatory scan state on multiblock deconstruction
+- Show Observatory distance in motor and lens tooltips
+- Show Observatory distance details in the GUI
+- Distinguish AIR from missing planet filler and ocean blocks
+- Persist sub-star names across XML loading and saving
+- Make config XML authoritative when reset-from-XML is enabled
+- Fix DIMID collisions for automatically assigned DIMID's between configured planets
+- Prevent biome lists leaking between planets during generation
 
 Changelog 2.2.14
 - Added customocion="obsidian" for obsidian worlds

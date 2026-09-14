@@ -8,23 +8,39 @@ import net.minecraft.world.gen.layer.GenLayer;
 import net.minecraft.world.gen.layer.IntCache;
 import net.minecraftforge.common.BiomeManager.BiomeEntry;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class GenLayerBiomePlanet extends GenLayer {
 
+    private static volatile List<BiomeEntry> legacyBiomeEntries = Collections.emptyList();
     private final List<BiomeEntry> biomeEntries;
+    private final boolean useLegacyBiomeEntries;
+
     int biomeLimiter = -1;
     private List<Biome> biomes;
 
     public GenLayerBiomePlanet(long seed, GenLayer parent, WorldType worldType) {
-        this(seed, parent, worldType, new ArrayList<>());
+        super(seed);
+        this.parent = parent;
+        this.biomeEntries = Collections.emptyList();
+        this.useLegacyBiomeEntries = true;
     }
 
     public GenLayerBiomePlanet(long seed, GenLayer parent, WorldType worldType, List<BiomeEntry> biomeEntries) {
         super(seed);
         this.parent = parent;
-        this.biomeEntries = biomeEntries;
+        this.biomeEntries = biomeEntries == null ? Collections.emptyList() : biomeEntries;
+        this.useLegacyBiomeEntries = false;
+    }
+
+    /**
+     * Legacy compatibility for callers compiled against older AR versions.
+     * Current AR biome layers receive their biome list in the constructor.
+     */
+    @Deprecated
+    public static synchronized void setupBiomesForUse(List<BiomeEntry> entries) {
+        legacyBiomeEntries = entries == null ? Collections.emptyList() : entries;
     }
 
     /**
@@ -44,19 +60,16 @@ public class GenLayerBiomePlanet extends GenLayer {
 
             }
         }
-
-        //TODO: DEBUG:
-        //Arrays.fill(aint1, BiomeGenBase.desert.biomeID);
-
         return aint1;
     }
 
     protected BiomeEntry getWeightedBiomeEntry() {
-        if (this.biomeEntries == null || this.biomeEntries.isEmpty()) {
+        List<BiomeEntry> entries = this.useLegacyBiomeEntries ? legacyBiomeEntries : this.biomeEntries;
+        if (entries.isEmpty()) {
             return new BiomeEntry(Biomes.OCEAN, 100);
         }
-        int totalWeight = WeightedRandom.getTotalWeight(this.biomeEntries);
+        int totalWeight = WeightedRandom.getTotalWeight(entries);
         int weight = nextInt(totalWeight);
-        return WeightedRandom.getRandomItem(this.biomeEntries, weight);
+        return WeightedRandom.getRandomItem(entries, weight);
     }
 }
