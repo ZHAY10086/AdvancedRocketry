@@ -2,6 +2,7 @@
 - Clear Observatory scan state on multiblock deconstruction
 - Show Observatory distance in motor and lens tooltips
 - Show Observatory distance details in the GUI
+- Observatory now uses LV-configs default powerstate
 - Distinguish AIR from missing planet filler and ocean blocks
 - Persist sub-star names across XML loading and saving
 - Make config XML authoritative when reset-from-XML is enabled
