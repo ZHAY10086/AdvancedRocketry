@@ -150,8 +150,8 @@ public class DimensionProperties implements Cloneable, IDimensionProperties {
     private boolean canGenerateVolcanoes;
     private boolean canGenerateStructures;
     private boolean canGenerateCaves;
-    private boolean canDecorate; //Should the button draw shadows, etc.  Clientside
-    private boolean overrideDecoration;
+    private boolean canDecorate; // Explicit client-side planet visual-effects value; (unrelated to biome/worldgen decoration))
+    private boolean overrideDecoration; // True when hasShading was explicitly specified
     private float craterFrequencyMultiplier;
     private float volcanoFrequencyMultiplier;
     private float geodeFrequencyMultiplier;
@@ -894,7 +894,7 @@ public class DimensionProperties implements Cloneable, IDimensionProperties {
      * @return true if the planet should be rendered with shadows, atmosphere glow, clouds, etc
      */
     public boolean hasDecorators() {
-        return !isAsteroid() && !isStar() || (canDecorate && overrideDecoration);
+        return overrideDecoration ? canDecorate : !isAsteroid() && !isStar();
     }
 
     public void setDecoratoration(boolean value) {
@@ -1649,6 +1649,12 @@ public class DimensionProperties implements Cloneable, IDimensionProperties {
         isRetrograde = nbt.getBoolean("isRetrograde");
         hasOxygen = nbt.getBoolean("hasOxygen");
         colorOverride = nbt.getBoolean("colorOverride");
+        skyRenderOverride = nbt.getBoolean("skyRenderOverride");
+        if (nbt.hasKey("hasShading", NBT.TAG_ANY_NUMERIC)) {
+            setDecoratoration(nbt.getBoolean("hasShading"));
+        } else {
+            unsetDecoratoration();
+        }
         atmosphereDensity = nbt.getInteger("atmosphereDensity");
 
         if (nbt.hasKey("originalAtmosphereDensity"))
@@ -2017,6 +2023,12 @@ public class DimensionProperties implements Cloneable, IDimensionProperties {
         nbt.setBoolean("isRetrograde", isRetrograde);
         nbt.setBoolean("hasOxygen", hasOxygen);
         nbt.setBoolean("colorOverride", colorOverride);
+        nbt.setBoolean("skyRenderOverride", skyRenderOverride);
+        if (isDecorationOverridden()) {
+            nbt.setBoolean("hasShading", canDecorate);
+        } else {
+            nbt.removeTag("hasShading");
+        }
         nbt.setInteger("atmosphereDensity", atmosphereDensity);
         nbt.setInteger("originalAtmosphereDensity", originalAtmosphereDensity);
         nbt.setDouble("peakInsolationMultiplier", peakInsolationMultiplier);

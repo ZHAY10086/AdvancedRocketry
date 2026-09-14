@@ -202,7 +202,6 @@ public class RenderSpaceTravelSky extends RenderPlanetarySky {
 
             }
 
-
             GL11.glRotated(90 - shadowAngle * 180 / Math.PI, 0, 1, 0);
 
             //Draw Shadow
@@ -243,16 +242,19 @@ public class RenderSpaceTravelSky extends RenderPlanetarySky {
         sphere.renderAll();
         GlStateManager.popMatrix();
         GlStateManager.blendFunc(GL11.GL_ONE, GL11.GL_SRC_ALPHA);
-
+        boolean renderPlanetEffects = !(properties instanceof DimensionProperties)
+                        || ((DimensionProperties) properties).hasDecorators();
         //Render shadow
         GlStateManager.pushMatrix();
         GlStateManager.scale(1.1f, 1.1f, 1.1f);
         GlStateManager.rotate(90, 0, 0, 1);
         GlStateManager.rotate((float) -(properties.getOrbitTheta() * 180 / Math.PI), 1, 0, 0);
         GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        Minecraft.getMinecraft().renderEngine.bindTexture(DimensionProperties.shadow3);
-        GlStateManager.color(.1f, .1f, .1f, 0.75f);
-        sphere.renderAll();
+        if (renderPlanetEffects) {
+            Minecraft.getMinecraft().renderEngine.bindTexture(DimensionProperties.shadow3);
+            GlStateManager.color(.1f, .1f, .1f, 0.75f);
+            sphere.renderAll();
+        }
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();
 
@@ -282,7 +284,7 @@ public class RenderSpaceTravelSky extends RenderPlanetarySky {
         GL11.glPopMatrix();
 
         //Render ATM
-        if (properties.hasAtmosphere()) {
+        if (renderPlanetEffects && properties.hasAtmosphere()) {
             GlStateManager.pushMatrix();
             GlStateManager.rotate(90, 0, 0, 1);
             GlStateManager.rotate((float) -(properties.getOrbitTheta() * 180 / Math.PI), 1, 0, 0);

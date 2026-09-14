@@ -167,13 +167,9 @@ public class RenderPlanetarySky extends IRenderHandler {
                 buffer.pos(size, 0+0.05F, -size).tex(f14, f15).endVertex();
                 buffer.pos(-size, 0+0.05F, -size).tex(f15, f15).endVertex();
                 Tessellator.getInstance().draw();
-                //buffer.finishDrawing();
-
             }
 
-        }
         GL11.glPushMatrix();
-
         GL11.glRotated(90 - shadowAngle * 180 / Math.PI, 0, 1, 0);
             //Draw Shadow
             GlStateManager.clearColor(1f, 1f, 1f, 1f);
@@ -186,8 +182,8 @@ public class RenderPlanetarySky extends IRenderHandler {
             buffer.pos(size * 1.05F, 0 + 0.1f, -size * 1.05F).tex(f14, f15).endVertex();
             buffer.pos(-size * 1.05F, 0 + 0.1f, -size * 1.05F).tex(f15, f15).endVertex();
             Tessellator.getInstance().draw();
-GL11.glPopMatrix();
-
+            GL11.glPopMatrix();
+        }
 
         GL11.glDepthMask(true);
         //Rings

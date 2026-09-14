@@ -7,6 +7,8 @@
 - Make config XML authoritative when reset-from-XML is enabled
 - Fix DIMID collisions for automatically assigned DIMID's between configured planets
 - Prevent biome lists leaking between planets during generation
+- Fixed per-planet `<skyRenderOverride>` settings being lost during NBT synchronization and world saves.
+- Fixed per-planet `<hasShading>` settings being lost during NBT synchronization; explicit `false` now correctly disables AR planet shadows and atmosphere effects.
 
 Changelog 2.2.14
 - Added customocion="obsidian" for obsidian worlds
