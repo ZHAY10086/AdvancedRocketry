@@ -397,6 +397,8 @@ msg.observetory.text.processdiscovery=Process discovery
 msg.observetory.text.observabledistance=Observable distance:
 msg.observetory.text.missionTime=Mission Time:
 msg.observetory.text.time=Time:
+msg.observetory.text.basedistance=Base Distance
+msg.observetory.text.lenses=Lenses
 msg.observetory.req.open=Observatory must be open (night, clear sky, sky access) or be in space!
 msg.observetory.print.already=You already printed a chip for this asteroid!
 
@@ -1183,6 +1185,7 @@ tooltip.advancedrocketry.sealdetector.shift.1=§fRight Click on block to use
 
 # Lens
 tooltip.advancedrocketry.lens=§cPart of Multiblock
+tooltip.advancedrocketry.lens.1=§fObservatory Distance: §6+5
 tooltip.advancedrocketry.lens.shift.1=§bUse Holo-Projector!
 
 ## SPACE SUIT + COMPONENTS
@@ -1329,6 +1332,16 @@ tooltip.libvulpes.battery.0.shift.2=§fCapacity: §c10.000 §fRF§7
 tooltip.libvulpes.battery.1=§5Satellite Component
 tooltip.libvulpes.battery.1.shift.1=§bIncreases Powerstorage
 tooltip.libvulpes.battery.1.shift.2=§fCapacity: §c40.000 §fRF§7
+
+# LibVulpes Motors
+tooltip.advancedrocketry.libvulpes.motor=§cPart of Multiblock
+tooltip.advancedrocketry.libvulpes.motor.1=§fObservatory Distance: §6+25
+tooltip.advancedrocketry.libvulpes.advancedmotor=§cPart of Multiblock
+tooltip.advancedrocketry.libvulpes.advancedmotor.1=§fObservatory Distance: §6+50
+tooltip.advancedrocketry.libvulpes.enhancedmotor=§cPart of Multiblock
+tooltip.advancedrocketry.libvulpes.enhancedmotor.1=§fObservatory Distance: §6+100
+tooltip.advancedrocketry.libvulpes.elitemotor=§cPart of Multiblock
+tooltip.advancedrocketry.libvulpes.elitemotor.1=§fObservatory Distance: §6+175
 
 # Data Unit
 tooltip.advancedrocketry.itemdata.header=§5Satellite Component

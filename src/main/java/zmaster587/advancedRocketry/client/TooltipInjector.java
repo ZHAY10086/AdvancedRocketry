@@ -215,6 +215,10 @@ public final class TooltipInjector {
         KEY_BY_ID.put("libvulpes:forgepowerinput", "tooltip.advancedrocketry.libvulpes.forgepowerinput"); 
         KEY_BY_ID.put("libvulpes:forgepoweroutput", "tooltip.advancedrocketry.libvulpes.forgepoweroutput"); 
         KEY_BY_ID.put("libvulpes:creativepowerbattery", "tooltip.advancedrocketry.libvulpes.creativepowerbattery");
+        KEY_BY_ID.put("libvulpes:motor",         "tooltip.advancedrocketry.libvulpes.motor");
+        KEY_BY_ID.put("libvulpes:advancedmotor", "tooltip.advancedrocketry.libvulpes.advancedmotor");
+        KEY_BY_ID.put("libvulpes:enhancedmotor", "tooltip.advancedrocketry.libvulpes.enhancedmotor");
+        KEY_BY_ID.put("libvulpes:elitemotor",    "tooltip.advancedrocketry.libvulpes.elitemotor");
 
         // ---- Fuel Tanks ----
         KEY_BY_ID.put("advancedrocketry:fueltank", "tooltip.advancedrocketry.fueltank");

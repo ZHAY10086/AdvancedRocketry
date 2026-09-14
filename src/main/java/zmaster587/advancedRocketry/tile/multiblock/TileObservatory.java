@@ -22,6 +22,7 @@ import zmaster587.advancedRocketry.api.DataStorage.DataType;
 import zmaster587.advancedRocketry.inventory.TextureResources;
 import zmaster587.advancedRocketry.inventory.modules.ModuleData;
 import zmaster587.advancedRocketry.inventory.modules.ModuleItemSlotButton;
+import zmaster587.advancedRocketry.inventory.modules.ModuleTextTooltip;
 import zmaster587.advancedRocketry.item.IDataItem;
 import zmaster587.advancedRocketry.item.ItemAsteroidChip;
 import zmaster587.advancedRocketry.tile.hatch.TileDataBus;
@@ -627,7 +628,34 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
                 modules.add(new ModuleData(120, 20, 4, this, massStorage.toArray(new DataStorage[0])));
             }
 
-            modules.add(new ModuleText(10, 90, LibVulpes.proxy.getLocalizedString("msg.observetory.text.observabledistance") + " " + getMaxDistance(), 0x2d2d2d, false));
+            int motorBonus = 0;
+            String motorName = LibVulpesBlocks.blockMotor.getLocalizedName();
+
+            if (viewDistance >= 175) {
+                motorBonus = 175;
+                motorName = LibVulpesBlocks.blockEliteMotor.getLocalizedName();
+            } else if (viewDistance >= 100) {
+                motorBonus = 100;
+                motorName = LibVulpesBlocks.blockEnhancedMotor.getLocalizedName();
+            } else if (viewDistance >= 50) {
+                motorBonus = 50;
+                motorName = LibVulpesBlocks.blockAdvancedMotor.getLocalizedName();
+            } else if (viewDistance >= 25) {
+                motorBonus = 25;
+            }
+
+            int lensBonus = Math.max(0, viewDistance - motorBonus);
+
+            modules.add(new ModuleTextTooltip(10, 90,
+                    LibVulpes.proxy.getLocalizedString("msg.observetory.text.observabledistance")
+                            + " " + getMaxDistance(),
+                    0x2d2d2d,
+                    LibVulpes.proxy.getLocalizedString("msg.observetory.text.basedistance") + ": +10",
+                    motorName + ": " + (motorBonus == 0 ? "0" : "+" + motorBonus),
+                    LibVulpes.proxy.getLocalizedString("msg.observetory.text.lenses")
+                            + ": " + (lensBonus == 0 ? "0" : "+" + lensBonus),
+                    "= " + getMaxDistance()
+            ));
         }
 
 		/*DataStorage data[] = new DataStorage[dataCables.size()];
