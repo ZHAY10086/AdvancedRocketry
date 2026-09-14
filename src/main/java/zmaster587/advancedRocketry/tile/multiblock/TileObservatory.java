@@ -61,8 +61,9 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
     final static int openTime = 100;
     final static int observationTime = 1000;
     private static final Block[] lens = {AdvancedRocketryBlocks.blockLens, Blocks.GLASS};
+    private static final int BASE_VIEW_DISTANCE = 10;
     private static final Object[][][] structure = new Object[][][]{
-    
+
             {{null, null, null, null, null},
                     {null, LibVulpesBlocks.blockStructureBlock, lens, LibVulpesBlocks.blockStructureBlock, null},
                     {null, LibVulpesBlocks.blockStructureBlock, LibVulpesBlocks.blockStructureBlock, LibVulpesBlocks.blockStructureBlock, null},
@@ -625,30 +626,30 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
             }
 
             int lensBonus = Math.max(0, viewDistance - motorBonus);
-
-            modules.add(new ModuleTextTooltip(10, 90,
-                    LibVulpes.proxy.getLocalizedString("msg.observetory.text.observabledistance")
-                            + " " + getMaxDistance(),
-                    0x2d2d2d,
-                    LibVulpes.proxy.getLocalizedString("msg.observetory.text.basedistance") + ": +10",
-                    motorName + ": " + (motorBonus == 0 ? "0" : "+" + motorBonus),
-                    LibVulpes.proxy.getLocalizedString("msg.observetory.text.lenses")
-                            + ": " + (lensBonus == 0 ? "0" : "+" + lensBonus),
-                    "= " + getMaxDistance()
-            ));
+            int spaceStationBonus = getSpaceStationDistanceBonus();
+            int maxDistance = getMaxDistance();
+            List<String> distanceTooltip = new ArrayList<>();
+            distanceTooltip.add(LibVulpes.proxy.getLocalizedString("msg.observetory.text.distancedetails"));
+            distanceTooltip.add(LibVulpes.proxy.getLocalizedString("msg.observetory.text.basedistance") + ": +" + BASE_VIEW_DISTANCE);
+            if (spaceStationBonus > 0) {
+                distanceTooltip.add(LibVulpes.proxy.getLocalizedString("msg.observetory.text.spacestation") + ": +" + spaceStationBonus);
+            }
+            distanceTooltip.add(motorName + ": " + (motorBonus == 0 ? "0" : "+" + motorBonus));
+            distanceTooltip.add(LibVulpes.proxy.getLocalizedString("msg.observetory.text.lenses") + ": " + (lensBonus == 0 ? "0" : "+" + lensBonus));
+            modules.add(new ModuleTextTooltip(10, 90, LibVulpes.proxy.getLocalizedString("msg.observetory.text.observabledistance") + " " + maxDistance, 0x2d2d2d, distanceTooltip.toArray(new String[0])));
         }
-
-		/*DataStorage data[] = new DataStorage[dataCables.size()];
-
-		if(data.length > 0)
-			modules.add(new ModuleData(40, 20, 0, this, data));*/
-        //modules.add(new ModuleProgress(120, 30, 0, TextureResources.progressScience, this));
-
         return modules;
     }
 
+    private int getSpaceStationDistanceBonus() {
+        ARConfiguration config = ARConfiguration.getCurrentConfig();
+        if (world == null || world.provider.getDimension() != config.spaceDimId) {
+            return 0;}
+        return config.observatorySpaceStationDistanceBonus;
+    }
+
     public int getMaxDistance() {
-        return viewDistance + 10;
+        return viewDistance + BASE_VIEW_DISTANCE + getSpaceStationDistanceBonus();
     }
 
     @Override

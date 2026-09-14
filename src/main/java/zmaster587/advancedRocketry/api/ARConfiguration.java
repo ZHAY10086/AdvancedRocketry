@@ -82,6 +82,8 @@ public class ARConfiguration {
     public int MoonId = Constants.INVALID_PLANET;
     @ConfigProperty(needsSync = true)
     public int spaceDimId = -2;
+    @ConfigProperty(needsSync = true)
+    public int observatorySpaceStationDistanceBonus = 15;
     @ConfigProperty
     public int fuelingStationTransferRate = 20;
     @ConfigProperty(needsSync = true)
@@ -426,6 +428,7 @@ public class ARConfiguration {
 
         //Station
         arConfig.spaceDimId = config.get(STATION, "spaceStationId", -2, "Dimension ID used for space stations.").getInt();
+        arConfig.observatorySpaceStationDistanceBonus = config.getInt("observatorySpaceStationDistanceBonus", STATION, 15, 0, 1000, "Additional Observatory view distance when built in the space station dimension. Set to 0 to disable.");
         arConfig.stationSize = config.get(STATION, "SpaceStationBuildRadius", 1024, "Maximum space station build radius. Should be a power of 2 (512, 1024, 2048, 4096, ...).  CAUTION: CHANGING THIS OPTION WILL DAMAGE EXISTING STATIONS!!!").getInt();
         arConfig.allowZeroGSpacestations = config.get(STATION, "allowZeroGSpacestations", false, "Allow stations to fully disable gravity.  It's possible to get stuck and require teleport, you have been warned!").getBoolean();
         arConfig.fuelPointsPerDilithium = config.get(STATION, "pointsPerDilithium", 500, "Warp fuel units provided by each Dilithium Crystal.", 1, 1000).getInt();
