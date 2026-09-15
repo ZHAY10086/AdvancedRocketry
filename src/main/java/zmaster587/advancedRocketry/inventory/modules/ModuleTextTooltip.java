@@ -29,7 +29,7 @@ public class ModuleTextTooltip extends ModuleText {
                 && relativeX <= font.getStringWidth(getText())
                 && relativeY >= 0
                 && relativeY <= font.FONT_HEIGHT) {
-            drawTooltip(gui, tooltip, mouseX, mouseY, zLevel + 300.0f, font);
+            drawTooltip(gui, tooltip, mouseX, mouseY, zLevel, font);
         }
     }
 }

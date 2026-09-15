@@ -65,7 +65,7 @@ public class ModuleLimitedSlotArrayTooltip extends ModuleLimitedSlotArray {
                 List<String> tooltip = new LinkedList<>(
                         Arrays.asList(tooltipText.split("\n")));
 
-                drawTooltip(gui, tooltip, mouseX, mouseY, zLevel + 300.0f, font);
+                drawTooltip(gui, tooltip, mouseX, mouseY, zLevel, font);
                 return;
             }
         }
