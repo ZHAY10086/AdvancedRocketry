@@ -179,6 +179,15 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
     private ModuleNumericTextbox textBox;
     private RedstoneState state;
     private ModuleRedstoneOutputButton redstoneControl;
+    private static final byte STATUS_LINKER_MISSING = 0;
+    private static final byte STATUS_READY = 1;
+    private static final byte STATUS_FULL = 2;
+    private static final byte STATUS_OFFLINE = 3;
+    private static final byte STATUS_MISSING = 4;
+    private static final byte STATUS_OUT_OF_RANGE = 5;
+
+    private byte destinationStatus = STATUS_LINKER_MISSING;
+    private ModuleText destinationStatusText;
 
     public TileRailgun() {
         inv = new EmbeddedInventory(1);
@@ -227,6 +236,81 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
         return null;
     }
 
+    private void updateDestinationStatus() {
+        if (world == null || world.isRemote)
+            return;
+
+        byte newStatus = STATUS_LINKER_MISSING;
+
+        BlockPos destPos = getDestPosition();
+        int destDimId = getDestDimId();
+
+        if (destPos != null && destDimId != Constants.INVALID_PLANET) {
+            World destWorld = DimensionManager.getWorld(destDimId);
+
+            if (destWorld == null || !destWorld.isBlockLoaded(destPos)) {
+                newStatus = STATUS_OFFLINE;
+            } else {
+                TileEntity tile = destWorld.getTileEntity(destPos);
+
+                if (tile != null && tile.isInvalid()) {
+                    newStatus = STATUS_OFFLINE;
+                } else if (!(tile instanceof TileRailgun)) {
+                    newStatus = STATUS_MISSING;
+                } else {
+                    int effectiveDestId =
+                            zmaster587.advancedRocketry.dimension.DimensionManager
+                                    .getEffectiveDimId(destWorld, destPos).getId();
+
+                    int effectiveSourceId =
+                            zmaster587.advancedRocketry.dimension.DimensionManager
+                                    .getEffectiveDimId(this.world, this.pos).getId();
+
+                    boolean inRange =
+                            PlanetaryTravelHelper.isTravelAnywhereInPlanetarySystem(
+                                    this.world.provider.getDimension(),
+                                    effectiveDestId)
+                                    || effectiveDestId == effectiveSourceId;
+
+                    if (!inRange) {
+                        newStatus = STATUS_OUT_OF_RANGE;
+                    } else {
+                        newStatus = STATUS_READY;
+
+                        TileRailgun destination = (TileRailgun) tile;
+
+                        out:
+                        for (IInventory input : itemInPorts) {
+                            for (int i = input.getSizeInventory() - 1; i >= 0; i--) {
+                                ItemStack stack = input.getStackInSlot(i);
+
+                                if (!stack.isEmpty()
+                                        && stack.getCount() >= minStackTransferSize) {
+                                    if (!destination.canReceiveCargo(stack))
+                                        newStatus = STATUS_FULL;
+
+                                    break out;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (destinationStatus != newStatus) {
+            destinationStatus = newStatus;
+
+            PacketHandler.sendToNearby(
+                    new PacketMachine(this, (byte) 6),
+                    world.provider.getDimension(),
+                    pos.getX(),
+                    pos.getY(),
+                    pos.getZ(),
+                    64d);
+        }
+    }
+
     @Override
     public Object[][][] getStructure() {
         return structure;
@@ -244,12 +328,40 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
                     LibVulpes.proxy.getLocalizedString("msg.railgun.transfermin"), 0x2b2b2b,
                     LibVulpes.proxy.getLocalizedString("msg.railgun.transfermin.tooltip")));
             modules.add(textBox);
+            destinationStatusText = new ModuleText(40, 62, getDestinationStatusText(), getDestinationStatusColor());
+            modules.add(destinationStatusText);
         }
         modules.add(new ModuleLimitedSlotArrayTooltip(40, 40, this, 0, 1,
                 LibVulpes.proxy.getLocalizedString("msg.railgun.linker.tooltip")));
         modules.add(redstoneControl);
 
         return modules;
+    }
+
+    private String getDestinationStatusText() {
+        switch (destinationStatus) {
+            case STATUS_READY:
+                return LibVulpes.proxy.getLocalizedString("msg.railgun.status.ready");
+            case STATUS_FULL:
+                return LibVulpes.proxy.getLocalizedString("msg.railgun.status.full");
+            case STATUS_OFFLINE:
+                return LibVulpes.proxy.getLocalizedString("msg.railgun.status.offline");
+            case STATUS_MISSING:
+                return LibVulpes.proxy.getLocalizedString("msg.railgun.status.missing");
+            case STATUS_OUT_OF_RANGE:
+                return LibVulpes.proxy.getLocalizedString("msg.railgun.status.outofrange");
+            default:
+                return LibVulpes.proxy.getLocalizedString("msg.railgun.status.linkermissing");
+        }
+    }
+
+    private int getDestinationStatusColor() {
+        switch (destinationStatus) {
+            case STATUS_MISSING:
+            case STATUS_OUT_OF_RANGE: return 0xFFFF5555;
+            case STATUS_LINKER_MISSING: return 0xFF777777;
+            default: return 0xFFFFFF22;
+        }
     }
 
     @Override
@@ -487,6 +599,8 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
             out.writeInt(minStackTransferSize);
         else if (id == 5)
             out.writeByte(state.ordinal());
+        else if (id == 6)
+            out.writeByte(destinationStatus);
         else
             super.writeDataToNetwork(out, id);
     }
@@ -498,6 +612,8 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
             nbt.setInteger("minTransferSize", in.readInt());
         else if (packetId == 5)
             nbt.setByte("state", in.readByte());
+        else if (packetId == 6)
+            nbt.setByte("destinationStatus", in.readByte());
         else
             super.readDataFromNetwork(in, packetId, nbt);
     }
@@ -510,6 +626,13 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
                 EnumFacing dir = RotatableBlock.getFront(world.getBlockState(pos));
                 LibVulpes.proxy.playSound(world, pos, AudioRegistry.railgunFire, SoundCategory.BLOCKS, Minecraft.getMinecraft().gameSettings.getSoundLevel(SoundCategory.BLOCKS), 0.975f + world.rand.nextFloat() * 0.05f);
                 recoil = world.getTotalWorldTime();
+            } else if (id == 6) {
+                destinationStatus = nbt.getByte("destinationStatus");
+
+                if (destinationStatusText != null) {
+                    destinationStatusText.setText(getDestinationStatusText());
+                    destinationStatusText.setColor(getDestinationStatusColor());
+                }
             }
         } else if (id == 4) {
             minStackTransferSize = nbt.getInteger("minTransferSize");
@@ -536,6 +659,7 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
         super.writeNetworkData(nbt);
         nbt.setByte("state", (byte) state.ordinal());
         nbt.setInteger("minTfrSize", minStackTransferSize);
+        nbt.setByte("destinationStatus", destinationStatus);
     }
 
     @Override
@@ -544,6 +668,7 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
         state = RedstoneState.values()[nbt.getByte("redstoneState")];
         redstoneControl.setRedstoneState(state);
         minStackTransferSize = nbt.getInteger("minTfrSize");
+        destinationStatus = nbt.getByte("destinationStatus");
     }
 
     @Override
@@ -581,5 +706,14 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
     @Override
     public void clear() {
         inv.clear();
+    }
+
+    //TODO: MAKE IT CONDITIONAL WHEN GUI IS OPEN
+    @Override
+    public void update() {
+        super.update();
+
+        if (!world.isRemote && world.getTotalWorldTime() % 20L == 0L)
+            updateDestinationStatus();
     }
 }

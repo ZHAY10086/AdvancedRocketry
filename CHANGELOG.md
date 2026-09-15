@@ -1,7 +1,9 @@
 2.2.16
-- Railgun:
-  - now works lol
-  - Cleaned up GUI and added some UX
+- Railgun FIXED:
+  - Errormessages in GUI
+  - Linker slot only accepts linker and has tooltip
+  - Input field tooltip explanation
+  
 - 
 
 2.2.15
