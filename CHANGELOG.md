@@ -15,6 +15,7 @@
 - Fixed per-planet `<hasShading>` settings being lost during NBT synchronization; explicit `false` now correctly disables AR planet shadows and atmosphere effects.
 - Fixed Beacon lifecycle hygiene
 - Strengthen station launches from moons
+- Added Orbital Laser Redstone control to GUI
 
 Changelog 2.2.14
 - Added customocion="obsidian" for obsidian worlds

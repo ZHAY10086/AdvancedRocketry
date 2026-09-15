@@ -33,6 +33,7 @@ import zmaster587.libVulpes.network.PacketMachine;
 import zmaster587.libVulpes.tile.multiblock.TileMultiPowerConsumer;
 import zmaster587.libVulpes.util.MultiInventory;
 import zmaster587.libVulpes.util.ZUtils;
+import zmaster587.libVulpes.util.ZUtils.RedstoneState;
 
 import javax.annotation.Nonnull;
 import java.util.LinkedList;
@@ -47,6 +48,8 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
     public int laserX, laserZ, tickSinceLastOperation;
     protected boolean isRunning, finished, isJammed;
     private ModuleButton resetBtn;
+    private ModuleRedstoneOutputButton redstoneControl;
+    private RedstoneState redstoneState;
     Object[][][] structure = new Object[][][]{
             {
                     {null, null, null, null, null, null, null, null, null, null, null},
@@ -118,14 +121,10 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
         numSteps = 0;
         prevDir = null;
 
-        resetBtn = new ModuleButton(
-                40, 20, 2,
-                LibVulpes.proxy.getLocalizedString("msg.spacelaser.reset"),
-                this,
-                zmaster587.libVulpes.inventory.TextureResources.buttonBuild,
-                34, 20
-        );
-
+        resetBtn = new ModuleButton(40, 20, 2, LibVulpes.proxy.getLocalizedString("msg.spacelaser.reset"), this, zmaster587.libVulpes.inventory.TextureResources.buttonBuild, 34, 20);
+        redstoneControl = new ModuleRedstoneOutputButton(174, 4, 4, "", this);
+        redstoneState = RedstoneState.ON;
+        redstoneControl.setRedstoneState(redstoneState);
         // Only meaningful in void-mining mode (from config)
         voidCobbleBtn = new ModuleButton(
                 50, 60,
@@ -216,6 +215,7 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
             out.writeBoolean(this.isRunning);
             out.writeBoolean(terraformingstatus);
             out.writeBoolean(voidCobble);
+            out.writeByte(redstoneState.ordinal());
         }
         else if (id == 12) {
             out.writeBoolean(isRunning);
@@ -224,8 +224,12 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
             out.writeInt(mode.ordinal());
             out.writeInt(this.xCenter);
             out.writeInt(this.yCenter);
-        }else if (id == 16){
+        }
+        else if (id == 16){
             out.writeBoolean(terraformingstatus);
+        }
+        else if (id == 18) {
+            out.writeByte(redstoneState.ordinal());
         }
     }
 
@@ -246,6 +250,7 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
             nbt.setBoolean("isRunning", in.readBoolean());
             nbt.setBoolean("terraformingstatus", in.readBoolean());
             nbt.setBoolean("voidCobble", in.readBoolean());
+            nbt.setByte("redstoneState", in.readByte());
         }
         else if (id == 12) {
             nbt.setBoolean("isRunning", in.readBoolean());
@@ -254,10 +259,13 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
             nbt.setInteger("mode", in.readInt());
             nbt.setInteger("newX", in.readInt());
             nbt.setInteger("newZ", in.readInt());
-        }else if (id == 16){
+        }
+        else if (id == 16){
             nbt.setBoolean("terraformingstatus", in.readBoolean());
         }
-
+        else if (id == 18) {
+            nbt.setByte("redstoneState", in.readByte());
+        }
     }
 
     public void client_update_tf_info(){
@@ -298,6 +306,11 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
 
             this.terraformingstatus = nbt.getBoolean("terraformingstatus");
             this.voidCobble = nbt.getBoolean("voidCobble");
+            int ordinal = nbt.getByte("redstoneState");
+            if (ordinal >= 0 && ordinal < RedstoneState.values().length) {
+                redstoneState = RedstoneState.values()[ordinal];
+                redstoneControl.setRedstoneState(redstoneState);
+            }
             client_update_tf_info();
 
 
@@ -352,7 +365,18 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
                 markDirty();
             }
         }
-
+        else if (id == 18) {
+            int ordinal = nbt.getByte("redstoneState");
+            if (ordinal >= 0 && ordinal < RedstoneState.values().length) {
+                redstoneState = RedstoneState.values()[ordinal];
+                redstoneControl.setRedstoneState(redstoneState);
+                if (side == Side.SERVER) {
+                    checkCanRun();
+                    PacketHandler.sendToNearby(new PacketMachine(this, (byte) 18),
+                            this.world.provider.getDimension(), pos, 2048);
+                }
+            }
+        }
         markDirty();
     }
 
@@ -524,29 +548,30 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
                     if (this.mode == MODE.SINGLE)
                         this.finished = true;
 
-                    if (this.world.getStrongPower(getPos()) != 0) {
-                        if (this.mode == MODE.SPIRAL) {
-                            this.numSteps++;
-                            if (this.radius < this.numSteps) {
-                                this.numSteps = 0;
-                                if (prevDir == EnumFacing.NORTH)
-                                    prevDir = EnumFacing.EAST;
-                                else if (prevDir == EnumFacing.EAST) {
-                                    prevDir = EnumFacing.SOUTH;
-                                    radius++;
-                                } else if (prevDir == EnumFacing.SOUTH)
-                                    prevDir = EnumFacing.WEST;
-                                else {
-                                    prevDir = EnumFacing.NORTH;
-                                    radius++;
-                                }
+                    if (this.mode == MODE.SPIRAL && isRedstoneStateSatisfied(
+                            this.world.isBlockIndirectlyGettingPowered(getPos()) > 0)) {
+                        this.numSteps++;
+
+                        if (this.radius < this.numSteps) {
+                            this.numSteps = 0;
+                            if (prevDir == EnumFacing.NORTH)
+                                prevDir = EnumFacing.EAST;
+                            else if (prevDir == EnumFacing.EAST) {
+                                prevDir = EnumFacing.SOUTH;
+                                radius++;
+                            } else if (prevDir == EnumFacing.SOUTH)
+                                prevDir = EnumFacing.WEST;
+                            else {
+                                prevDir = EnumFacing.NORTH;
+                                radius++;
                             }
-
-                            this.laserX += 3 * prevDir.getFrontOffsetX();
-                            this.laserZ += 3 * prevDir.getFrontOffsetZ();
-                            PacketHandler.sendToNearby(new PacketMachine(this, (byte) 15), this.world.provider.getDimension(), pos, 128);
-
                         }
+
+                        this.laserX += 3 * prevDir.getFrontOffsetX();
+                        this.laserZ += 3 * prevDir.getFrontOffsetZ();
+                        PacketHandler.sendToNearby(new PacketMachine(this, (byte) 15), this.world.provider.getDimension(), pos, 128);
+
+
                     }
                 }
             }
@@ -605,6 +630,7 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
 
 
         nbt.setBoolean("voidCobble", voidCobble);
+        nbt.setByte("redstoneState", (byte) redstoneState.ordinal());
         nbt.setInteger("laserX", laserX);
         nbt.setInteger("laserZ", laserZ);
         nbt.setByte("mode", (byte) mode.ordinal());
@@ -624,7 +650,16 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
     @Override
     public void readFromNBT(NBTTagCompound nbt) {
         super.readFromNBT(nbt);
-
+        if (nbt.hasKey("redstoneState")) {
+            int ordinal = nbt.getByte("redstoneState");
+            if (ordinal >= 0 && ordinal < RedstoneState.values().length)
+                redstoneState = RedstoneState.values()[ordinal];
+            else
+                redstoneState = RedstoneState.ON;
+        } else {
+            redstoneState = RedstoneState.ON;
+        }
+        redstoneControl.setRedstoneState(redstoneState);
 
         laserX = nbt.getInteger("laserX");
         laserZ = nbt.getInteger("laserZ");
@@ -690,18 +725,24 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
     /**
      * Checks to see if the situation for firing the laser exists... and changes the state accordingly
      */
-
-
+    private boolean isRedstoneStateSatisfied(boolean powered) {
+        if (redstoneState == RedstoneState.OFF)
+            return true;
+        if (redstoneState == RedstoneState.INVERTED)
+            return !powered;
+        return powered;
+    }
 
     public void checkCanRun() {
         if (world.isRemote) return;
 
-        // Read redstone once and reuse it
-        final int redstonePower = world.isBlockIndirectlyGettingPowered(getPos());
+        // Read redstone once and apply the configured control mode
+        final boolean redstoneSatisfied =
+                isRedstoneStateSatisfied(world.isBlockIndirectlyGettingPowered(getPos()) > 0);
 
-        // Fast path for void-mining: if there is no redstone, don't even bother
-        // with space station / dimension logic.
-        if (voidMiningMode && redstonePower == 0) {
+        // Fast path for void-mining: if redstone control is not satisfied,
+        // don't even bother with space station / dimension logic.
+        if (voidMiningMode && !redstoneSatisfied) {
             if (isRunning) {
                 drill.deactivate();
                 setRunning(false);
@@ -749,7 +790,7 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
             }
             if (this.finished
                     || this.isJammed
-                    || redstonePower == 0
+                    || !redstoneSatisfied
                     || unableToRun()) {
                 if (isRunning) {
                     drill.deactivate();
@@ -759,7 +800,6 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
                 // No getWorld()/initDimension() here on purpose.
                 setRunning(drill.activate(null, laserX, laserZ));
             }
-
             return;
         }
 
@@ -781,22 +821,15 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
             }
         }
 
-
-
         //Laser  redstone power, not be jammed, and be in orbit and energy to function
-        if ((mode == MODE.T_FORM && (t==null ||!t.has_blocks_in_tf_queue())) || this.finished || (this.isJammed && mode != MODE.T_FORM) || redstonePower == 0 || unableToRun()) {
+        if ((mode == MODE.T_FORM && (t==null ||!t.has_blocks_in_tf_queue())) || this.finished || (this.isJammed && mode != MODE.T_FORM) || !redstoneSatisfied || unableToRun()) {
             if (isRunning) {
                 drill.deactivate();
                 setRunning(false);
             }
-        } else if (redstonePower > 0) {
-
-
+        } else {
             if (orbitDimId == SpaceObjectManager.WARPDIMID)
                 return;
-
-
-
 
             //Laser will be on at this point
             if (!isRunning) {
@@ -813,8 +846,6 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
                 setRunning(drill.activate(orbitWorld, laserX, laserZ));
             }
         }
-
-
     }
 
     public int getEnergyPercentScaled(int max) {
@@ -884,6 +915,7 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
     @Override
     public List<ModuleBase> getModules(int id, EntityPlayer player) {
         List<ModuleBase> modules = new LinkedList<>();
+        modules.add(redstoneControl);
 
         // --- VOID-MINING SIMPLIFIED GUI ---
         if (voidMiningMode) {
@@ -967,7 +999,7 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
     }
     @Override
     public void onInventoryButtonPressed(int buttonId) {
-        if (buttonId!=2)
+        if (buttonId != 2 && buttonId != 4)
             resetBtn.setColor(0x90ff90);
         if (buttonId == 0) {
             this.decrementMode();
@@ -983,6 +1015,10 @@ public class TileOrbitalLaserDrill extends TileMultiPowerConsumer implements IGu
         } else if (buttonId == 3) {
             // Ask server to toggle voidCobble (no payload needed)
             PacketHandler.sendToServer(new PacketMachine(this, (byte) 17));
+            return;
+        } else if (buttonId == 4) {
+            redstoneState = redstoneControl.getState();
+            PacketHandler.sendToServer(new PacketMachine(this, (byte) 18));
             return;
         } else
             return;
