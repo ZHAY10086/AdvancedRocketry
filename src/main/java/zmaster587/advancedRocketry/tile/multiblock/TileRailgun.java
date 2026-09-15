@@ -27,7 +27,6 @@ import zmaster587.advancedRocketry.api.Constants;
 import zmaster587.advancedRocketry.entity.EntityItemAbducted;
 import zmaster587.advancedRocketry.util.AudioRegistry;
 import zmaster587.advancedRocketry.util.PlanetaryTravelHelper;
-import zmaster587.libVulpes.Configuration;
 import zmaster587.libVulpes.LibVulpes;
 import zmaster587.libVulpes.api.LibVulpesBlocks;
 import zmaster587.libVulpes.block.RotatableBlock;
@@ -179,7 +178,6 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
     private ModuleRedstoneOutputButton redstoneControl;
 
     public TileRailgun() {
-        enabled = Configuration.defaultMultiblockMachineEnabled;
         inv = new EmbeddedInventory(1);
         powerPerTick = 100000;
         redstoneControl = new ModuleRedstoneOutputButton(174, 4, -1, "", this);
@@ -440,16 +438,6 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
     @Override
     public boolean isItemValidForSlot(int i, @Nonnull ItemStack stack) {
         return stack.isEmpty() || stack.getItem() instanceof ItemLinker;
-    }
-
-    @Override
-    public void deconstructMultiBlock(World world, BlockPos destroyedPos, boolean blockBroken, IBlockState state) {
-        super.deconstructMultiBlock(world, destroyedPos, blockBroken, state);
-        enabled = Configuration.defaultMultiblockMachineEnabled;
-        if (!world.isRemote) {
-            markDirty();
-            world.notifyBlockUpdate(pos, world.getBlockState(pos), world.getBlockState(pos), 3);
-        }
     }
 
     @Override

@@ -29,7 +29,6 @@ import zmaster587.advancedRocketry.tile.hatch.TileDataBus;
 import zmaster587.advancedRocketry.util.Asteroid;
 import zmaster587.advancedRocketry.util.Asteroid.StackEntry;
 import zmaster587.advancedRocketry.util.IDataInventory;
-import zmaster587.libVulpes.Configuration;
 import zmaster587.libVulpes.LibVulpes;
 import zmaster587.libVulpes.api.LibVulpesBlocks;
 import zmaster587.libVulpes.block.BlockMeta;
@@ -118,7 +117,6 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
     private ModuleTab tabModule;
 
     public TileObservatory() {
-        enabled = Configuration.defaultMultiblockMachineEnabled;
         openProgress = 0;
         viewDistance = 0;
         lastButton = -1;
@@ -233,11 +231,6 @@ public class TileObservatory extends TileMultiPowerConsumer implements IModularI
 
         if (!worldIn.isRemote) {
             restoreDataBusesAfterTeardown();
-        }
-        enabled = Configuration.defaultMultiblockMachineEnabled;
-        if (!worldIn.isRemote) {
-            markDirty();
-            worldIn.notifyBlockUpdate(pos, worldIn.getBlockState(pos), worldIn.getBlockState(pos), 3);
         }
     }
 
