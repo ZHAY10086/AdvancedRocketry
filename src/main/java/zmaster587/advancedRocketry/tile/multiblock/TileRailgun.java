@@ -25,10 +25,13 @@ import zmaster587.advancedRocketry.AdvancedRocketry;
 import zmaster587.advancedRocketry.api.AdvancedRocketryBlocks;
 import zmaster587.advancedRocketry.api.Constants;
 import zmaster587.advancedRocketry.entity.EntityItemAbducted;
+import zmaster587.advancedRocketry.inventory.modules.ModuleLimitedSlotArrayTooltip;
+import zmaster587.advancedRocketry.inventory.modules.ModuleTextTooltip;
 import zmaster587.advancedRocketry.util.AudioRegistry;
 import zmaster587.advancedRocketry.util.PlanetaryTravelHelper;
 import zmaster587.libVulpes.LibVulpes;
 import zmaster587.libVulpes.api.LibVulpesBlocks;
+import zmaster587.libVulpes.api.LibVulpesItems;
 import zmaster587.libVulpes.block.RotatableBlock;
 import zmaster587.libVulpes.interfaces.ILinkableTile;
 import zmaster587.libVulpes.inventory.modules.*;
@@ -232,17 +235,18 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
     @Override
     public List<ModuleBase> getModules(int ID, EntityPlayer player) {
         List<ModuleBase> modules = super.getModules(ID, player);
+        modules.removeIf(module -> module instanceof ModuleText);
 
-        modules.add(new ModuleSlotArray(40, 40, this, 0, 1));
         if (world.isRemote) {
-            //if(textBox == null) {
             textBox = new ModuleNumericTextbox(this, 80, 40, 32, 12, 2);
-            //}
             textBox.setText(String.valueOf(minStackTransferSize));
-            modules.add(new ModuleText(60, 25, LibVulpes.proxy.getLocalizedString("msg.railgun.transfermin"), 0x2b2b2b));
+            modules.add(new ModuleTextTooltip(60, 25,
+                    LibVulpes.proxy.getLocalizedString("msg.railgun.transfermin"), 0x2b2b2b,
+                    LibVulpes.proxy.getLocalizedString("msg.railgun.transfermin.tooltip")));
             modules.add(textBox);
         }
-
+        modules.add(new ModuleLimitedSlotArrayTooltip(40, 40, this, 0, 1,
+                LibVulpes.proxy.getLocalizedString("msg.railgun.linker.tooltip")));
         modules.add(redstoneControl);
 
         return modules;
@@ -281,9 +285,10 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
         }
     }
 
-    @Override
     protected void onRunningPoweredTick() {
-        //Do nothing, or add charge effect
+        if (!world.isRemote) {
+            useEnergy(usedPowerPerTick());
+        }
     }
 
     @Override
@@ -365,10 +370,9 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
 
     public boolean canReceiveCargo(@Nonnull ItemStack stack) {
         for (IInventory inv : this.itemOutPorts) {
-            if (ZUtils.numEmptySlots(inv) > 0)
+            if (ZUtils.doesInvHaveRoom(stack, inv))
                 return true;
         }
-
         return false;
     }
 
@@ -436,8 +440,11 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
     public void closeInventory(EntityPlayer player) {}
 
     @Override
-    public boolean isItemValidForSlot(int i, @Nonnull ItemStack stack) {
-        return stack.isEmpty() || stack.getItem() instanceof ItemLinker;
+    public boolean isItemValidForSlot(int slot, @Nonnull ItemStack stack) {
+        return slot == 0
+                && stack.getItem() == LibVulpesItems.itemLinker
+                && ItemLinker.isSet(stack)
+                && ItemLinker.getDimId(stack) != Constants.INVALID_PLANET;
     }
 
     @Override

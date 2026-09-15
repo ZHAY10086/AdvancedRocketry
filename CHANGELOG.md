@@ -1,5 +1,8 @@
 2.2.16
-- a
+- Railgun:
+  - now works lol
+  - Cleaned up GUI and added some UX
+- 
 
 2.2.15
 - Observatory:
