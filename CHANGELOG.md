@@ -16,6 +16,7 @@
 - Fixed Beacon lifecycle hygiene
 - Strengthen station launches from moons
 - Added Orbital Laser Redstone control to GUI
+- Fixed Orbital Registry eating first click after being placed instead of opening GUI
 
 Changelog 2.2.14
 - Added customocion="obsidian" for obsidian worlds

@@ -1476,15 +1476,10 @@ public class TileOrbitalRegistry extends TileMultiPowerConsumer
 
     @Override
     public boolean isItemValidForSlot(int slot, @Nonnull ItemStack stack) {
-        if (slot != SLOT_CHIP_IN || stack.isEmpty())
-            return false;
-
+        if (slot != SLOT_CHIP_IN || stack.isEmpty()){return false;}
         Item item = stack.getItem();
-        if (tabModule.getTab() == TAB_STATIONS) {
-            return item instanceof ItemStationChip;}
-
         return item instanceof ItemSatelliteIdentificationChip
-                || item instanceof ItemOreScanner;
+                || item instanceof ItemStationChip;
     }
 
     @Override
@@ -1527,8 +1522,6 @@ public class TileOrbitalRegistry extends TileMultiPowerConsumer
     @Override
     public void invalidate() {
         super.invalidate();
-
-        // Optional but nice to keep state sane
         satCache.clear();
         stationCache.clear();
         selectedSatId = -1;
@@ -1536,13 +1529,18 @@ public class TileOrbitalRegistry extends TileMultiPowerConsumer
         lastSatButton = -1;
         lastStationButton = -1;
 
-        // Critical: reset static scroll cache so containers don't reuse old offsets
+        // reset static scroll cache so containers don't reuse old offsets
         if (world != null && world.isRemote) {
             AdvancedRocketry.proxy.clearScrollCache();
         }
 
     }
-
+    @Override
+    public void onLoad() {
+        if (!world.isRemote && !isComplete()) {
+            attemptCompleteStructure(world.getBlockState(pos));
+        }
+    }
     @Override
     public void onChunkUnload() {
         super.onChunkUnload();
