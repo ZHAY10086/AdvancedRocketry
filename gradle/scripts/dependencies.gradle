@@ -82,7 +82,7 @@ dependencies {
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
     compileOnly rfg.deobf("mezz.jei:jei_1.12.2:${jeiVersion}:api")
-    runtimeOnly rfg.deobf("mezz.jei:jei_1.12.2:${jeiVersion}")
+    runtimeOnly rfg.deobf("maven.modrinth:2iXFLwYO:2n6nfyY4")
 
     // Local deobfuscated/dev LibVulpes for compiling Advanced Rocketry
     implementation files("${rootDir}/libs/libvulpes-0.5.9-dev.jar")
