@@ -1941,16 +1941,9 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
             if (satellite == null) {
                 ItemStack stack = tile.getStackInSlot(0);
 
-                if (!stack.isEmpty()
-                        && stack.getItem() == AdvancedRocketryItems.itemSpaceStation) {
-
-                    StorageChunk storage =
-                            ((ItemPackedStructure) stack.getItem())
-                                    .getStructure(stack);
-
-                    ISpaceObject spaceObject =
-                            SpaceObjectManager.getSpaceManager()
-                                    .getSpaceStation(ItemStationChip.getUUID(stack));
+                if (!stack.isEmpty() && stack.getItem() == AdvancedRocketryItems.itemSpaceStation) {
+                    StorageChunk storage = ((ItemPackedStructure) stack.getItem()).getStructure(stack);
+                    ISpaceObject spaceObject = SpaceObjectManager.getSpaceManager().getSpaceStation(ItemStationChip.getUUID(stack));
 
                     // In case of no NBT data or the like
                     if (spaceObject == null) {
@@ -1959,14 +1952,12 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
                     }
 
                     // Existing space-station behavior remains unchanged.
-                    SpaceObjectManager.getSpaceManager().moveStationToBody(
-                            spaceObject,
-                            DimensionManager.getEffectiveDimId(
-                                    world.provider.getDimension(),
-                                    getPosition()
-                            ).getId()
-                    );
-
+                    int launchDim = world.provider.getDimension();
+                    int targetDim = launchDim;
+                    if (launchDim == ARConfiguration.getCurrentConfig().spaceDimId) {
+                        targetDim = DimensionManager.getEffectiveDimId(launchDim, getPosition()).getId();
+                    }
+                    SpaceObjectManager.getSpaceManager().moveStationToBody(spaceObject, targetDim);
                     spaceObject.onModuleUnpack(storage);
                     tile.setInventorySlotContents(0, ItemStack.EMPTY);
                 }
