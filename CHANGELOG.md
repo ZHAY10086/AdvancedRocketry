@@ -17,6 +17,7 @@
 - Strengthen station launches from moons
 - Added Orbital Laser Redstone control to GUI
 - Fixed Orbital Registry eating first click after being placed instead of opening GUI
+- Satellite builder is now a Singleblock machine instead of arbitrary multi with powerinput hatch. (remove the old Power Input and connect RF directly to the Satellite Builder)
 
 Changelog 2.2.14
 - Added customocion="obsidian" for obsidian worlds

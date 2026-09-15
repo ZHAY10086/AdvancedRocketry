@@ -5,6 +5,9 @@ import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.energy.CapabilityEnergy;
+import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fml.relauncher.Side;
 import zmaster587.advancedRocketry.api.AdvancedRocketryBlocks;
 import zmaster587.advancedRocketry.api.AdvancedRocketryItems;
@@ -22,18 +25,16 @@ import zmaster587.libVulpes.network.PacketHandler;
 import zmaster587.libVulpes.network.PacketMachine;
 import zmaster587.libVulpes.tile.multiblock.TileMultiPowerConsumer;
 import zmaster587.libVulpes.util.EmbeddedInventory;
+import zmaster587.libVulpes.util.UniversalBattery;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.LinkedList;
 import java.util.List;
 
-public class TileSatelliteBuilder extends TileMultiPowerConsumer implements IModularInventory, IInventory, IButtonInventory {
+public class TileSatelliteBuilder extends TileMultiPowerConsumer implements IModularInventory, IInventory, IButtonInventory, IEnergyStorage {
 
-    public static final Object[][][] structure = new Object[][][]{
-            {{'c'}},
-            {{'P'}}
-    };
+    public static final Object[][][] structure = new Object[][][] {{ { 'c' } }};
     private static final byte primaryFunctionSlot = 0;
     //Slot 0: Main satellite device
     //Slot 1 -> 6: Other functional pieces
@@ -50,9 +51,14 @@ public class TileSatelliteBuilder extends TileMultiPowerConsumer implements IMod
     private static final byte chassisSlot = 11;
     EmbeddedInventory inventory;
     private ModuleButton buildButton;
+    private static final int ENERGY_CAPACITY = 100_000;
+    private static final String ENERGY_NBT = "satelliteBuilderEnergy";
+
+    private final UniversalBattery internalBattery = new UniversalBattery(ENERGY_CAPACITY);
 
     public TileSatelliteBuilder() {
         inventory = new EmbeddedInventory(5);
+        batteries.addBattery(internalBattery);
         powerPerTick = 10;
     }
 
@@ -393,8 +399,8 @@ public class TileSatelliteBuilder extends TileMultiPowerConsumer implements IMod
     @Override
     public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
         super.writeToNBT(nbt);
-
         inventory.writeToNBT(nbt);
+        nbt.setInteger(ENERGY_NBT, internalBattery.getUniversalEnergyStored());
         return nbt;
     }
 
@@ -403,6 +409,8 @@ public class TileSatelliteBuilder extends TileMultiPowerConsumer implements IMod
         super.readFromNBT(nbt);
 
         inventory.readFromNBT(nbt);
+        int stored = nbt.hasKey(ENERGY_NBT) ? nbt.getInteger(ENERGY_NBT) : 0;
+        internalBattery.setEnergyStored(Math.max(0, Math.min(ENERGY_CAPACITY, stored)));
     }
 
     @Override
@@ -437,24 +445,64 @@ public class TileSatelliteBuilder extends TileMultiPowerConsumer implements IMod
     }
 
     @Override
-    public void setField(int id, int value) {
-        inventory.setField(id, value);
-
-    }
+    public void setField(int id, int value) {inventory.setField(id, value);}
 
     @Override
-    public int getFieldCount() {
-        return inventory.getFieldCount();
-    }
+    public int getFieldCount() {return inventory.getFieldCount();}
 
     @Override
     public void clear() {
         inventory.clear();
         refreshBuildButtonTooltip();
     }
+    @Override
+    public void resetCache() {
+        super.resetCache();
+        batteries.addBattery(internalBattery);
+    }
+    @Override
+    public boolean isEmpty() {return inventory.isEmpty();}
 
     @Override
-    public boolean isEmpty() {
-        return inventory.isEmpty();
+    public boolean hasCapability(Capability<?> capability, @Nullable EnumFacing facing) {
+        return capability == CapabilityEnergy.ENERGY || super.hasCapability(capability, facing);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    @Nullable
+    public <T> T getCapability(Capability<T> capability, @Nullable EnumFacing facing) {
+        if (capability == CapabilityEnergy.ENERGY){
+            return (T) this;}
+        return super.getCapability(capability, facing);
+    }
+
+    @Override
+    public int receiveEnergy(int maxReceive, boolean simulate) {
+        int received = internalBattery.acceptEnergy(maxReceive, simulate);
+        if (!simulate && received > 0)
+            markDirty();
+        return received;
+    }
+
+    @Override
+    public int extractEnergy(int maxExtract, boolean simulate) {return 0;}
+
+    @Override
+    public int getEnergyStored() {return internalBattery.getUniversalEnergyStored();}
+
+    @Override
+    public int getMaxEnergyStored() {return internalBattery.getMaxEnergyStored();}
+
+    @Override
+    public boolean canExtract() {return false;}
+
+    @Override
+    public boolean canReceive() {return true;}
+
+    @Override
+    public void onLoad() {
+        if (!world.isRemote && !isComplete())
+            attemptCompleteStructure(world.getBlockState(pos));
     }
 }
