@@ -14,8 +14,7 @@ import zmaster587.libVulpes.util.HashedBlockPosition;
 
 public class TileBeacon extends TileMultiPowerConsumer {
 
-    private static final Object[][][] structure = new Object[][][]
-            {
+    private static final Object[][][] structure = new Object[][][]{
                     {
                             {Blocks.AIR, Blocks.AIR, Blocks.AIR},
                             {Blocks.AIR, Blocks.REDSTONE_BLOCK, Blocks.AIR},
@@ -69,6 +68,12 @@ public class TileBeacon extends TileMultiPowerConsumer {
             } else
                 props.removeBeaconLocation(world, new HashedBlockPosition(getPos()));
         }
+    }
+
+    @Override
+    public void deconstructMultiBlock(World world, BlockPos destroyedPos, boolean blockBroken, IBlockState state) {
+        if (!world.isRemote) {setMachineEnabled(false);}
+        super.deconstructMultiBlock(world, destroyedPos, blockBroken, state);
     }
 
     @Override
