@@ -1479,7 +1479,8 @@ public class TileOrbitalRegistry extends TileMultiPowerConsumer
         if (slot != SLOT_CHIP_IN || stack.isEmpty()){return false;}
         Item item = stack.getItem();
         return item instanceof ItemSatelliteIdentificationChip
-                || item instanceof ItemStationChip;
+                || item instanceof ItemStationChip
+                || item instanceof ItemOreScanner;
     }
 
     @Override
