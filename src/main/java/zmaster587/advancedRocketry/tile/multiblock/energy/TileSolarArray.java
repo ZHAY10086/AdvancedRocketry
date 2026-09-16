@@ -17,6 +17,7 @@ import zmaster587.advancedRocketry.api.AdvancedRocketryBlocks;
 import zmaster587.advancedRocketry.dimension.DimensionManager;
 import zmaster587.advancedRocketry.dimension.DimensionProperties;
 import zmaster587.advancedRocketry.stations.SpaceObjectManager;
+import zmaster587.advancedRocketry.util.AstronomicalBodyHelper;
 import zmaster587.libVulpes.LibVulpes;
 import zmaster587.libVulpes.block.BlockMeta;
 import zmaster587.libVulpes.inventory.modules.ModuleBase;
@@ -30,36 +31,36 @@ import java.util.List;
 
 public class TileSolarArray extends TileMultiPowerProducer implements ITickable {
 
-    static final Object[][][] structure = new Object[][][]{
-            {
-                    {'p', 'c', 'p'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'},
-                    {'*', '*', '*'}
-            }};
+    static final Object[][][] structure = new Object[][][]{{
+            {'p', 'c', 'p'},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel},
+            {AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel, AdvancedRocketryBlocks.blockSolarArrayPanel}
+    }};
 
     boolean initialCheck;
     int powerMadeLastTick, prevPowerMadeLastTick;
     int numPanels;
     ModuleText textModule;
+    private static final double EARTH_ATMOSPHERE_FACTOR = Math.exp(-0.0026899d * 100d);
 
     public TileSolarArray() {
         textModule = new ModuleText(40, 20, LibVulpes.proxy.getLocalizedString("msg.microwaverec.notgenerating"), 0x2b2b2b);
@@ -134,15 +135,52 @@ public class TileSolarArray extends TileMultiPowerProducer implements ITickable 
             return;
 
         if (!world.isRemote) {
-            DimensionProperties properties = DimensionManager.getInstance().getDimensionProperties(world.provider.getDimension());
-            double insolationPowerMultiplier = (world.provider.getDimension() == ARConfiguration.getCurrentConfig().spaceDimId) ? SpaceObjectManager.getSpaceManager().getSpaceStationFromBlockCoords(this.pos).getInsolationMultiplier() : properties.getPeakInsolationMultiplier();
-            int energyRecieved = 0;
-            if (enabled && ((world.isDaytime() && world.canBlockSeeSky(this.pos.up())) || (world.provider.getDimension() == ARConfiguration.getCurrentConfig().spaceDimId && world.canBlockSeeSky(this.pos.down())))) {
-                //Multiplied by two for 520W = 1 RF/t becoming 2 RF/t @ 100% efficiency, and by insolation mult for solar stuff
-                //Slight adjustment to make Earth 0.9995 into a 1.0
-                energyRecieved = Math.min(4096, (int) (numPanels * 1.0005d * 2 * insolationPowerMultiplier));
+            int energyReceived = 0;
+            boolean inSpace = world.provider.getDimension() == ARConfiguration.getCurrentConfig().spaceDimId;
+            if (enabled && ((world.isDaytime() && world.canBlockSeeSky(pos.up())) || (inSpace && world.canBlockSeeSky(pos.down())))) {
+
+                DimensionProperties properties = null;
+                double atmosphereFactor = 1.0d;
+
+                if (inSpace) {
+                    zmaster587.advancedRocketry.stations.SpaceStationObject station = (zmaster587.advancedRocketry.stations.SpaceStationObject)
+                                    SpaceObjectManager.getSpaceManager().getSpaceStationFromBlockCoords(pos);
+
+                    if (station != null && !station.isWarping()) {
+                        properties = station.getOrbitingPlanet();
+                    }
+                } else {
+                    properties = DimensionManager.getInstance().getDimensionProperties(world.provider.getDimension());
+                    atmosphereFactor = Math.exp(-0.0026899d * properties.getAtmosphereDensity());
+                }
+
+                if (properties != null) {
+                    ARConfiguration config = ARConfiguration.getCurrentConfig();
+                    double brightness = AstronomicalBodyHelper.getStellarBrightness(properties.getStar(), properties.getSolarOrbitalDistance());
+
+                    double earthOrbitOutput = config.solarArrayEarthOutput / EARTH_ATMOSPHERE_FACTOR;
+                    double output;
+
+                    if (brightness <= 1.0d) {
+                        output = earthOrbitOutput * brightness;
+                    } else {
+                        double progressToSol = Math.min(1.0d, Math.log(brightness) / Math.log(10000.0d));
+                        output = earthOrbitOutput + (config.solarArrayMaxOutput - earthOrbitOutput) * progressToSol;
+                    }
+
+                    energyReceived = (int) Math.min(config.solarArrayMaxOutput, Math.max(0.0d, output * atmosphereFactor));
+                }
             }
-            powerMadeLastTick = energyRecieved * ARConfiguration.getCurrentConfig().solarGeneratorMult;
+
+            powerMadeLastTick = energyReceived;
+
+            if (powerMadeLastTick != prevPowerMadeLastTick) {
+                prevPowerMadeLastTick = powerMadeLastTick;
+                PacketHandler.sendToNearby(new PacketMachine(this, (byte) 1),
+                        world.provider.getDimension(), pos, 128);
+            }
+
+            producePower(powerMadeLastTick);
 
             if (powerMadeLastTick != prevPowerMadeLastTick) {
                 prevPowerMadeLastTick = powerMadeLastTick;

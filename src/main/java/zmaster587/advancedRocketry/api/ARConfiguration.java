@@ -237,6 +237,10 @@ public class ARConfiguration {
     @ConfigProperty
     public int solarGeneratorMult;
     @ConfigProperty
+    public int solarArrayEarthOutput = 200;
+    @ConfigProperty
+    public int solarArrayMaxOutput = 4096;
+    @ConfigProperty
     public boolean gravityAffectsFuel;
     @ConfigProperty
     public boolean lowGravityBoots;
@@ -444,6 +448,8 @@ public class ARConfiguration {
 
         //Energy Production
         arConfig.solarGeneratorMult = config.get(ENERGY, "solarGeneratorMultiplier", 1, "Power produced per tick by the solar generator.").getInt();
+        arConfig.solarArrayEarthOutput = config.get(ENERGY, "solarArrayEarthOutput", 200, "Generated RF/t from a complete Solar Array on normal AR Earth at the surface, in clear daylight. Other locations scale from this value.", 0, Integer.MAX_VALUE).getInt();
+        arConfig.solarArrayMaxOutput = config.get(ENERGY, "solarArrayMaxOutput", 4096, "Maximum final generated RF/t from a complete Solar Array. A station orbiting Sol reaches this value. Does not use solarGeneratorMultiplier.", 0, Integer.MAX_VALUE).getInt();
         arConfig.microwaveRecieverMulitplier = (float) config.get(ENERGY, "MicrowaveRecieverMultiplier", 1f, "Multiplier for microwave receiver power output.").getDouble();
         arConfig.defaultItemTimeBlackHole = config.get(ENERGY, "defaultBurnTime", 500, "Burn time in ticks for items not listed in blackHoleTimings.").getInt();
         arConfig.blackHolePowerMultiplier = config.get(ENERGY, "blackHoleGeneratorMultiplier", 1, "Multiplier for black hole generator power output.").getInt();

@@ -4,7 +4,9 @@
   - Linker slot only accepts linker and has tooltip
   - Input field tooltip explanation
   
-- 
+- Remove obsolete Galacticraft gravity handling
+- Solar Arrays now require all 63 panels
+- Added configurable Earth surface output and final maximum output. Sol reaches the maximum; Array output no longer uses solarGeneratorMultiplier.
 
 2.2.15
 - Observatory:
