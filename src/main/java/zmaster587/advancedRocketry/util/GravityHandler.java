@@ -7,15 +7,12 @@ import net.minecraft.entity.item.*;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.entity.projectile.EntityThrowable;
-import zmaster587.advancedRocketry.AdvancedRocketry;
 import zmaster587.advancedRocketry.api.AdvancedRocketryAPI;
 import zmaster587.advancedRocketry.api.IGravityManager;
 import zmaster587.advancedRocketry.api.IPlanetaryProvider;
 import zmaster587.advancedRocketry.dimension.DimensionManager;
 import zmaster587.advancedRocketry.world.provider.WorldProviderSpace;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.WeakHashMap;
 
 public class GravityHandler implements IGravityManager {
@@ -25,23 +22,10 @@ public class GravityHandler implements IGravityManager {
     public static final float THROWABLE_OFFSET = 0.03f;
     public static final float OTHER_OFFSET = 0.04f;
     public static final float ARROW_OFFSET = 0.05f;
-
-    static Class gcWorldProvider;
-    static Method gcGetGravity;
-    private static WeakHashMap<Entity, Double> entityMap = new WeakHashMap<>();
+    private static final WeakHashMap<Entity, Double> entityMap = new WeakHashMap<>();
 
     static {
         AdvancedRocketryAPI.gravityManager = new GravityHandler();
-
-
-        try {
-            gcWorldProvider = Class.forName("micdoodle8.mods.galacticraft.api.world.IGalacticraftWorldProvider");
-            AdvancedRocketry.logger.info("GC IGalacticraftWorldProvider  found");
-            gcGetGravity = gcWorldProvider.getMethod("getGravity");
-        } catch (ClassNotFoundException | NoSuchMethodException e) {
-            gcWorldProvider = null;
-            AdvancedRocketry.logger.info("GC IGalacticraftWorldProvider not found");
-        }
     }
 
     public static void applyGravity(Entity entity) {
@@ -51,8 +35,8 @@ public class GravityHandler implements IGravityManager {
         //With no set methods
         //So I cannot, without much more effort than it's worth, set elytra flight. Therefore, they're magic.
         if ((!(entity instanceof EntityPlayer) && !(entity instanceof EntityFlying)) || (!(entity instanceof EntityFlying) && !(((EntityPlayer) entity).capabilities.isFlying || ((EntityLivingBase) entity).isElytraFlying()))) {
-            Double d;
-            if (entityMap.containsKey(entity) && (d = entityMap.get(entity)) != null) {
+            Double d = entityMap.get(entity);
+            if (d != null) {
 
                 double multiplier = (isOtherEntity(entity) || entity instanceof EntityItem) ? OTHER_OFFSET * d : (entity instanceof EntityArrow) ? ARROW_OFFSET * d : (entity instanceof EntityThrowable) ? THROWABLE_OFFSET * d : LIVING_OFFSET * d;
 
@@ -74,21 +58,10 @@ public class GravityHandler implements IGravityManager {
                     entity.motionY -= (gravMult * THROWABLE_OFFSET - THROWABLE_OFFSET);
                 else if (entity instanceof EntityArrow)
                     entity.motionY -= (gravMult * ARROW_OFFSET - ARROW_OFFSET);
-                else if (entity instanceof EntityLivingBase && entity.isInWater() || entity.isInLava())
+                else if (entity instanceof EntityLivingBase && (entity.isInWater() || entity.isInLava()))
                     entity.motionY -= (gravMult * FLUID_LIVING_OFFSET - FLUID_LIVING_OFFSET);
                 else if (entity instanceof EntityLivingBase)
                     entity.motionY -= (gravMult * LIVING_OFFSET - LIVING_OFFSET);
-
-            } else {
-                //GC handling
-                if (gcWorldProvider != null && gcWorldProvider.isAssignableFrom(entity.world.provider.getClass())) {
-                    try {
-                        entity.motionY -= LIVING_OFFSET - (float) gcGetGravity.invoke(entity.world.provider);
-                    } catch (IllegalAccessException | IllegalArgumentException
-                             | InvocationTargetException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
         }
     }
