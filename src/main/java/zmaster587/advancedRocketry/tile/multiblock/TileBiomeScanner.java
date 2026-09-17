@@ -458,7 +458,7 @@ public class TileBiomeScanner extends TileMultiPowerConsumer
     @Override
     @Nonnull
     public AxisAlignedBB getRenderBoundingBox() {
-        return new AxisAlignedBB(pos.add(-5, -3, -5), pos.add(5, 3, 5));
+        return new AxisAlignedBB(pos.add(-5, -4, -5), pos.add(5, 4, 5));
     }
 
     @Override

@@ -65,8 +65,7 @@ public class TileRollingMachine extends TileMultiblockMachine {
 
     @Override
     public AxisAlignedBB getRenderBoundingBox() {
-
-        return new AxisAlignedBB(pos.add(-4, -4, -4), pos.add(4, 4, 4));
+        return super.getRenderBoundingBox().grow(5, 4, 5);
     }
 
 }

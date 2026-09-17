@@ -81,8 +81,7 @@ public class TilePrecisionLaserEtcher extends TileMultiblockMachine implements I
     @Override
     @Nonnull
     public AxisAlignedBB getRenderBoundingBox() {
-
-        return new AxisAlignedBB(pos.add(-3, -2, -3), pos.add(3, 2, 3));
+        return new AxisAlignedBB(pos.add(-3, -3, -3), pos.add(3, 3, 3));
     }
 
     private boolean isLensItem(@Nonnull ItemStack stack) {
