@@ -397,4 +397,6 @@ public class TileAreaGravityController extends TileMultiPowerConsumer implements
         PacketHandler.sendToServer(new PacketMachine(this, (byte) 4));
     }
 
+    @Override
+    public AxisAlignedBB getRenderBoundingBox() {return super.getRenderBoundingBox().grow(1.0D);}
 }

@@ -9,6 +9,7 @@ import net.minecraft.network.play.server.SPacketUpdateTileEntity;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
@@ -237,4 +238,6 @@ public class TileSolarArray extends TileMultiPowerProducer implements ITickable 
             powerMadeLastTick = nbt.getInteger("amtPwr");
         }
     }
+    @Override
+    public AxisAlignedBB getRenderBoundingBox() {return super.getRenderBoundingBox().grow(1.0D);}
 }
