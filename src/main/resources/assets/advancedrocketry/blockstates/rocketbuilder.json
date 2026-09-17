@@ -5,7 +5,7 @@
         "model": "minecraft:orientable",
         "textures": {
             "top": "libvulpes:blocks/machinegeneric",
-            "front": "advancedrocketry:blocks/monitorfront",
+            "front": "advancedrocketry:blocks/assemblerfront_rocket",
             "side": "libvulpes:blocks/machinegeneric"
         }
     },
