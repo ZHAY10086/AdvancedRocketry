@@ -34,6 +34,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import zmaster587.advancedRocketry.AdvancedRocketry;
+import zmaster587.advancedRocketry.api.ARConfiguration;
 import zmaster587.advancedRocketry.api.AdvancedRocketryBlocks;
 import zmaster587.advancedRocketry.api.AdvancedRocketryItems;
 import zmaster587.advancedRocketry.api.stations.ISpaceObject;
@@ -62,6 +63,7 @@ import zmaster587.advancedRocketry.tile.multiblock.energy.TileMicrowaveReciever;
 import zmaster587.advancedRocketry.tile.multiblock.energy.TileSolarArray;
 import zmaster587.advancedRocketry.tile.multiblock.machine.*;
 import zmaster587.advancedRocketry.tile.multiblock.orbitallaserdrill.TileOrbitalLaserDrill;
+import zmaster587.advancedRocketry.tile.TileRocketPrinter;
 import zmaster587.libVulpes.entity.fx.FxErrorBlock;
 import zmaster587.libVulpes.inventory.modules.ModuleContainerPan;
 import zmaster587.libVulpes.tile.TileSchematic;
@@ -105,6 +107,7 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void registerRenderers() {
         ClientRegistry.bindTileEntitySpecialRenderer(TileRocketAssemblingMachine.class, new RendererRocketAssemblingMachine());
+        ClientRegistry.bindTileEntitySpecialRenderer(TileRocketPrinter.class, new RendererRocketPrinter());
         ClientRegistry.bindTileEntitySpecialRenderer(TilePrecisionAssembler.class, new RendererPrecisionAssembler());
         ClientRegistry.bindTileEntitySpecialRenderer(TileCuttingMachine.class, new RendererCuttingMachine());
         ClientRegistry.bindTileEntitySpecialRenderer(TileCrystallizer.class, new RendererCrystallizer());
@@ -116,9 +119,7 @@ public class ClientProxy extends CommonProxy {
         ClientRegistry.bindTileEntitySpecialRenderer(TileWarpCore.class, new RendererWarpCore());
         ClientRegistry.bindTileEntitySpecialRenderer(TileChemicalReactor.class, new RendererChemicalReactor("advancedrocketry:models/chemicalreactor.obj", "advancedrocketry:textures/models/chemicalreactor.png"));
         ClientRegistry.bindTileEntitySpecialRenderer(TileSchematic.class, new RendererPhantomBlock());
-        //ClientRegistry.bindTileEntitySpecialRenderer(TileDrill.class, new RendererDrill());
         ClientRegistry.bindTileEntitySpecialRenderer(TileMicrowaveReciever.class, new RendererMicrowaveReciever());
-        //ClientRegistry.bindTileEntitySpecialRenderer(TileOrbitalLaserDrill.class, new RenderOrbitalLaserDrillTile());
         ClientRegistry.bindTileEntitySpecialRenderer(TileBiomeScanner.class, new RenderBiomeScanner());
         ClientRegistry.bindTileEntitySpecialRenderer(TileBlackHoleGenerator.class, new RenderBlackHoleGenerator());
         ClientRegistry.bindTileEntitySpecialRenderer(TileAtmosphereTerraformer.class, new RenderTerraformerAtm());
@@ -133,7 +134,6 @@ public class ClientProxy extends CommonProxy {
         ClientRegistry.bindTileEntitySpecialRenderer(TileSolarArray.class, new RendererSolarArray());
         ClientRegistry.bindTileEntitySpecialRenderer(TileBrokenPart.class, new RendererBrokenPart());
 
-        //ClientRegistry.bindTileEntitySpecialRenderer(TileModelRenderRotatable.class, modelBlock);
 
         //RendererModelBlock blockRenderer = new RendererModelBlock();
 
@@ -224,7 +224,8 @@ public class ClientProxy extends CommonProxy {
         ModelLoader.setCustomModelResourceLocation(AdvancedRocketryItems.itemWafer, 0, new ModelResourceLocation("advancedrocketry:siliconWafer", "inventory"));
 
         ModelLoader.setCustomModelResourceLocation(AdvancedRocketryItems.itemSpaceStation, 0, new ModelResourceLocation("advancedrocketry:spaceStation", "inventory"));
-
+        if (ARConfiguration.getCurrentConfig().enableRocketPrinter)
+            ModelLoader.setCustomModelResourceLocation(AdvancedRocketryItems.itemRocketBlueprint, 0, new ModelResourceLocation("advancedrocketry:rocketblueprint", "inventory"));
 
         ModelLoader.setCustomModelResourceLocation(AdvancedRocketryItems.itemSpaceSuit_Chest, 0, new ModelResourceLocation("advancedrocketry:spaceChestplate", "inventory"));
         ModelLoader.setCustomModelResourceLocation(AdvancedRocketryItems.itemSpaceSuit_Helmet, 0, new ModelResourceLocation("advancedrocketry:spaceHelmet", "inventory"));
@@ -492,21 +493,15 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
+    @Override
+    public ModuleBase createRocketBlueprintPreview(int x, int y, TileRocketPrinter printer) {
+        return new ModuleRocketBlueprintPreview(x, y, printer);
+    }
 
     @Override
-    public ModuleBase createScrollListPan(
-            int baseX, int baseY,
-            List<ModuleBase> list,
-            int sizeX, int sizeY
-    ) {
-        return new ModuleContainerPanYOnlyWithScrollCache(
-                baseX, baseY,
-                list, new LinkedList<>(),
-                null,
-                sizeX - 2, sizeY,
-                0, -48,
-                0, 72
-        );
+    public ModuleBase createScrollListPan(int baseX, int baseY, List<ModuleBase> list, int sizeX, int sizeY) {
+        return new ModuleContainerPanYOnlyWithScrollCache(baseX, baseY, list, new LinkedList<>(), null,
+                sizeX - 2, sizeY, 0, -48, 0, 72);
     }
 
     @Override

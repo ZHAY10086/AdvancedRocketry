@@ -1,0 +1,11 @@
+{
+  "type": "advancedrocketry:precisionassembler",
+  "itemingredients": [
+    {"type": "forge:ore_dict", "ore": "dustRedstone"},
+    {"type": "forge:ore_dict", "ore": "gemLapis"},
+    {"item": "advancedrocketry:ic", "data": 0}
+  ],
+  "time": 500,
+  "energy": 60,
+  "itemresults": {"item": "advancedrocketry:rocketblueprint"}
+}

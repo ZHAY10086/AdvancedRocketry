@@ -30,6 +30,7 @@ public class AdvancedRocketryItems {
     public static Item itemSawBlade;
     public static Item itemSpaceStationChip;
     public static Item itemSpaceStation;
+    public static Item itemRocketBlueprint;
     public static Item itemSpaceSuit_Helmet;
     public static Item itemSpaceSuit_Chest;
     public static Item itemSpaceSuit_Leggings;

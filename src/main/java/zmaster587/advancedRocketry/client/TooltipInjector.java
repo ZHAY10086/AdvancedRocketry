@@ -206,6 +206,7 @@ public final class TooltipInjector {
 
         // ---- Assemblers ----
         KEY_BY_ID.put("advancedrocketry:rocketbuilder", "tooltip.advancedrocketry.rocketassembler");
+        KEY_BY_ID.put("advancedrocketry:rocketprinter", "tooltip.advancedrocketry.rocketprinter");
         KEY_BY_ID.put("advancedrocketry:stationbuilder", "tooltip.advancedrocketry.stationassembler");
         KEY_BY_ID.put("advancedrocketry:deployablerocketbuilder", "tooltip.advancedrocketry.deployablerocketassembler");
 

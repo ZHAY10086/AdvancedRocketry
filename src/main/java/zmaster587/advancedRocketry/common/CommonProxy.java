@@ -12,6 +12,7 @@ import zmaster587.advancedRocketry.api.ARConfiguration;
 import zmaster587.advancedRocketry.api.stations.ISpaceObject;
 import zmaster587.advancedRocketry.api.IAtmosphere;
 import zmaster587.advancedRocketry.tile.atmosphere.TileAtmosphereDetector;
+import zmaster587.advancedRocketry.tile.TileRocketPrinter;
 import zmaster587.libVulpes.inventory.modules.ModuleBase;
 import zmaster587.libVulpes.inventory.modules.ModuleButton;
 import zmaster587.libVulpes.inventory.modules.ModuleContainerPanYOnly;
@@ -26,28 +27,13 @@ public class CommonProxy {
 
     private static final zmaster587.advancedRocketry.dimension.DimensionManager dimensionManagerServer = new zmaster587.advancedRocketry.dimension.DimensionManager();
 
-    public void registerRenderers() {
+    public void registerRenderers() {}
+    public ModuleBase createRocketBlueprintPreview(int x, int y, TileRocketPrinter printer) { return null; }
+    public void registerEventHandlers() {}
 
-    }
-
-    public void registerEventHandlers() {
-
-    }
-
-
-    public ModuleBase createScrollListPan(
-            int baseX, int baseY,
-            List<ModuleBase> list,
-            int sizeX, int sizeY
-    ) {
-        return new ModuleContainerPanYOnly(
-                baseX, baseY,
-                list, new LinkedList<>(),
-                null,
-                sizeX - 2, sizeY,
-                0, -48,
-                0, 72
-        );
+    public ModuleBase createScrollListPan(int baseX, int baseY, List<ModuleBase> list, int sizeX, int sizeY) {
+        return new ModuleContainerPanYOnly(baseX, baseY, list, new LinkedList<>(), null, sizeX - 2, sizeY,
+                0, -48, 0, 72);
     }
 
     /** Generic clear for any UI scroll cache (no-op on server) */
@@ -60,45 +46,34 @@ public class CommonProxy {
         return createScrollListPan(baseX, baseY, list2, sizeX, sizeY);
     }
 
-    public void clearObservatoryScrollCache() {
-        clearScrollCache();
-    }
+    public void clearObservatoryScrollCache() {clearScrollCache();}
 
     public void spawnParticle(String particle, World world, double x, double y,
                               double z, double motionX, double motionY, double motionZ) {
-
     }
 
     public void spawnDynamicRocketSmoke(World world, double x, double y,
                                         double z, double motionX, double motionY, double motionZ, int engineNum) {
-
     }
 
     public void spawnDynamicRocketFlame(World world, double x, double y,
                                         double z, double motionX, double motionY, double motionZ, int engineNum) {
-
     }
 
-    public void registerKeyBindings() {
-
-    }
+    public void registerKeyBindings() {}
 
     public Profiler getProfiler() {
         return FMLCommonHandler.instance().getMinecraftServerInstance().profiler;
     }
 
-    public void changeClientPlayerWorld(World world) {
-
-    }
+    public void changeClientPlayerWorld(World world) {}
 
     public void fireFogBurst(ISpaceObject station) {
         PacketHandler.sendToNearby(new PacketStationUpdate(station, PacketStationUpdate.Type.SIGNAL_WHITE_BURST), ARConfiguration.getCurrentConfig().spaceDimId, station.getSpawnLocation().x, 128, station.getSpawnLocation().z, ARConfiguration.getCurrentConfig().stationSize);
     }
 
 
-    public float calculateCelestialAngleSpaceStation() {
-        return 0;
-    }
+    public float calculateCelestialAngleSpaceStation() {return 0;}
 
     public long getWorldTimeUniversal(int id) {
         if (DimensionManager.getWorld(id) != null)
@@ -108,12 +83,10 @@ public class CommonProxy {
 
     public void preinit() {
         // TODO Auto-generated method stub
-
     }
 
     public void init() {
         // TODO Auto-generated method stub
-
     }
 
     public void spawnLaser(Entity entity, Vec3d toPos) {
@@ -123,26 +96,19 @@ public class CommonProxy {
     public void loadUILayout(
             net.minecraftforge.common.config.Configuration config) {
         // TODO Auto-generated method stub
-
     }
 
-    public void displayMessage(String msg, int time) {
-
-    }
+    public void displayMessage(String msg, int time) {}
 
     public void preInitBlocks() {
         // TODO Auto-generated method stub
-
     }
 
     public void preInitItems() {
         // TODO Auto-generated method stub
-
     }
 
-    public String getNameFromBiome(Biome biome) {
-        return "";
-    }
+    public String getNameFromBiome(Biome biome) {return "";}
 
     public zmaster587.advancedRocketry.dimension.DimensionManager getDimensionManager() {
         return dimensionManagerServer;

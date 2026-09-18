@@ -404,6 +404,43 @@ msg.observetory.text.lenses=Lenses
 msg.observetory.req.open=Observatory must be open (night, clear sky, sky access) or be in space!
 msg.observetory.print.already=You already printed a chip for this asteroid!
 
+# Rocket 3D printer
+tile.rocketPrinter.name=Rocket 3D Printer
+item.rocketBlueprint.name=Rocket Blueprint Unit
+msg.rocketprinter.ready=Ready
+msg.rocketprinter.no_assembler=No unique Rocket Assembler attached
+msg.rocketprinter.no_rocket=No assembled rocket on pad
+msg.rocketprinter.saved=Blueprint saved
+msg.rocketprinter.no_blueprint=Insert a blueprint
+msg.rocketprinter.invalid=Invalid or missing blocks
+msg.rocketprinter.pad_busy=Rocket on pad
+msg.rocketprinter.bad_pad=Pad too small or changed
+msg.rocketprinter.blocked=Print area obstructed
+msg.rocketprinter.missing=Missing materials
+msg.rocketprinter.unsupported=Unsupported block item
+msg.rocketprinter.unsupported_block=Cannot print block: %s
+msg.rocketprinter.no_power=Waiting for power
+msg.rocketprinter.printing=Printing
+msg.rocketprinter.paused=Operation paused
+msg.rocketprinter.saving=Saving blueprint...
+msg.rocketprinter.complete=Print complete
+msg.rocketprinter.detected=Rocket detected
+msg.rocketprinter.blueprint_ready=Blueprint ready to print
+msg.rocketprinter.chunks_unloaded=Pad chunks not loaded
+msg.rocketprinter.save=Save
+msg.rocketprinter.print=Print
+msg.rocketprinter.stop=Stop
+tooltip.rocketprinter.preview=Toggle preview
+tooltip.rocketprinter.rotate=Drag to rotate
+tooltip.rocketprinter.zoom=Scroll to zoom
+tooltip.rocketblueprint.design=Design: %s
+tooltip.rocketblueprint.size=Size: %s x %s x %s
+tooltip.rocketblueprint.blocks=Blocks: %s
+tooltip.rocketblueprint.invalid=Unavailable or invalid design
+tooltip.rocketblueprint.blank=Blank blueprint
+tooltip.rocketblueprint.rocket=Rocket
+
+
 # Atmosphere detector GUI labels
 msg.atmosphere.air=Normal Air
 msg.atmosphere.pressurizedair=Pressurized Air
@@ -1566,6 +1603,13 @@ tooltip.advancedrocketry.rocketassembler.shift.1=§bRequires Launch Pad + Struct
 tooltip.advancedrocketry.rocketassembler.shift.2=§fConnecting infrastructure here lets it auto-connect to Rockets on the Pad
 tooltip.advancedrocketry.rocketassembler.alt.1=§fPlace this 1 block higher than Launch Pad, connecting lower corners and facing opposite of the Launch Pad square
 
+# Rocket 3D Printer
+tooltip.advancedrocketry.rocketprinter=§cSaves Rocketdesigns
+tooltip.advancedrocketry.rocketprinter.shift.1=§bAttach to the left, right, top or bottom of a Rocket Assembler
+tooltip.advancedrocketry.rocketprinter.shift.2=§fInsert a blank Rocket Blueprint to save its assembled Rocket
+tooltip.advancedrocketry.rocketprinter.alt.1=§fPrinting requires power and rocket parts in adjacent inventories
+tooltip.advancedrocketry.rocketprinter.alt.2=§fAfter printing, Scan and Assemble with the Rocket Assembler
+
 # Station Assembler
 tooltip.advancedrocketry.stationassembler=§cPacks Space Stations down for Launch!
 tooltip.advancedrocketry.stationassembler.shift.1=§bRequires Launch Pad + Structure Tower Structure
@@ -1576,7 +1620,7 @@ tooltip.advancedrocketry.packedstructure=§fInsert in §cSatellite Bay§f to put
 tooltip.advancedrocketry.packedstructure.shift.1=§eSet the rocket's target planet before launch
 
 # Deployable Rocket Assembler
-tooltip.advancedrocketry.deployablerocketassembler=§cBuilds Rockets on Space Stations
+tooltip.advancedrocketry.deployablerocketassembler=§cBuilds Gas mission Rockets
 tooltip.advancedrocketry.deployablerocketassembler.shift.1=§bRequires Structure Tower blocks
 tooltip.advancedrocketry.deployablerocketassembler.shift.2=§fUsed for §6Gas Missions§7
 tooltip.advancedrocketry.deployablerocketassembler.alt.1=§fPlace this in the middle of an upside-down T facing outward in space, then add horizontal support from the tower top.

@@ -1,4 +1,5 @@
 2.2.16
+- Added Rocket 3D printing and Blueprint, save rocket designs and print blueprints from connected storage
 - Railgun FIXED:
   - Errormessages in GUI
   - Linker slot only accepts linker and has tooltip
@@ -7,6 +8,8 @@
 - Remove obsolete Galacticraft gravity handling
 - Solar Arrays now require all 63 panels
   - Added configurable Earth surface output and final maximum output. Sol reaches the maximum; Array output no longer uses solarGeneratorMultiplier.
+- Fix some renderculling (more multiblock models should now stick to screen instead of dissapearing)
+
 
 2.2.15
 - Observatory:

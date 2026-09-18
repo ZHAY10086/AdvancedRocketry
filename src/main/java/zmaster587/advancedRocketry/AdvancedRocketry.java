@@ -380,6 +380,7 @@ public class AdvancedRocketry {
         GameRegistry.registerTileEntity(TileBrokenPart.class, "ARbrokenPart");
         GameRegistry.registerTileEntity(TileRocketServiceStation.class, "ARserviceStation");
         GameRegistry.registerTileEntity(TileRocketAssemblingMachine.class, "ARrocketBuilder");
+        GameRegistry.registerTileEntity(TileRocketPrinter.class, new ResourceLocation(Constants.modId, "rocketPrinter"));
         GameRegistry.registerTileEntity(TileWarpCore.class, "ARwarpCore");
         //GameRegistry.registerTileEntity(TileModelRender.class, "ARmodelRenderer");
         GameRegistry.registerTileEntity(TileFuelingStation.class, "ARfuelingStation");
@@ -507,6 +508,8 @@ public class AdvancedRocketry {
         AdvancedRocketryItems.itemSpaceElevatorChip = new ItemSpaceElevatorChip().setUnlocalizedName("elevatorChip").setCreativeTab(tabAdvRocketry);
         AdvancedRocketryItems.itemAsteroidChip = new ItemAsteroidChip().setUnlocalizedName("asteroidChip").setCreativeTab(tabAdvRocketry);
         AdvancedRocketryItems.itemSpaceStation = new ItemPackedStructure().setUnlocalizedName("station");
+        if (ARConfiguration.getCurrentConfig().enableRocketPrinter)
+            AdvancedRocketryItems.itemRocketBlueprint = new ItemRocketBlueprint().setUnlocalizedName("rocketBlueprint").setCreativeTab(tabAdvRocketry);
         AdvancedRocketryItems.itemSmallAirlockDoor = new ItemDoor(AdvancedRocketryBlocks.blockAirLock).setUnlocalizedName("smallAirlock").setCreativeTab(tabAdvRocketry);
         //Short.MAX_VALUE is forge's wildcard, don't use it
         AdvancedRocketryItems.itemCarbonScrubberCartridge = new Item().setMaxDamage(Short.MAX_VALUE - 1).setUnlocalizedName("carbonScrubberCartridge").setCreativeTab(tabAdvRocketry);
@@ -607,7 +610,8 @@ public class AdvancedRocketry {
         LibVulpesBlocks.registerItem(AdvancedRocketryItems.itemSmallAirlockDoor.setRegistryName("smallAirlockDoor"));
         LibVulpesBlocks.registerItem(AdvancedRocketryItems.itemHovercraft.setRegistryName("hoverCraft"));
         LibVulpesBlocks.registerItem(AdvancedRocketryItems.itemSpaceStation.setRegistryName("spaceStation"));
-
+        if (ARConfiguration.getCurrentConfig().enableRocketPrinter)
+            LibVulpesBlocks.registerItem(AdvancedRocketryItems.itemRocketBlueprint.setRegistryName("rocketBlueprint"));
 
         OreDictionary.registerOre("waferSilicon", new ItemStack(AdvancedRocketryItems.itemWafer, 1, 0));
         OreDictionary.registerOre("ingotCarbon", new ItemStack(AdvancedRocketryItems.itemMisc, 1, 1));
@@ -714,6 +718,8 @@ public class AdvancedRocketry {
         AdvancedRocketryBlocks.blockInvHatch = new BlockInvHatch(Material.IRON).setUnlocalizedName("invhatch").setCreativeTab(tabAdvRocketry).setHardness(1).setResistance(1f);
         //Assembly machines
         AdvancedRocketryBlocks.blockRocketBuilder = new BlockTileWithMultitooltip(TileRocketAssemblingMachine.class, GuiHandler.guiId.MODULARNOINV.ordinal()).setUnlocalizedName("rocketAssembler").setCreativeTab(tabAdvRocketry).setHardness(3f);
+        if (ARConfiguration.getCurrentConfig().enableRocketPrinter)
+            AdvancedRocketryBlocks.blockRocketPrinter = new BlockTile(TileRocketPrinter.class, GuiHandler.guiId.MODULAR.ordinal()).setUnlocalizedName("rocketPrinter").setCreativeTab(tabAdvRocketry).setHardness(3f);
         AdvancedRocketryBlocks.blockStationBuilder = new BlockTileWithMultitooltip(TileStationAssembler.class, GuiHandler.guiId.MODULAR.ordinal()).setUnlocalizedName("stationAssembler").setCreativeTab(tabAdvRocketry).setHardness(3f);
         AdvancedRocketryBlocks.blockDeployableRocketBuilder = new BlockTileWithMultitooltip(TileUnmannedVehicleAssembler.class, GuiHandler.guiId.MODULARNOINV.ordinal()).setUnlocalizedName("deployableRocketAssembler").setCreativeTab(tabAdvRocketry).setHardness(3f);
         //Infrastructure machines
@@ -883,6 +889,8 @@ public class AdvancedRocketry {
         LibVulpesBlocks.registerBlock(AdvancedRocketryBlocks.blockInvHatch.setRegistryName("invhatch"));
         //Assembly machines
         LibVulpesBlocks.registerBlock(AdvancedRocketryBlocks.blockRocketBuilder.setRegistryName("rocketBuilder"));
+        if (ARConfiguration.getCurrentConfig().enableRocketPrinter)
+            LibVulpesBlocks.registerBlock(AdvancedRocketryBlocks.blockRocketPrinter.setRegistryName("rocketPrinter"));
         LibVulpesBlocks.registerBlock(AdvancedRocketryBlocks.blockStationBuilder.setRegistryName("stationBuilder"));
         LibVulpesBlocks.registerBlock(AdvancedRocketryBlocks.blockDeployableRocketBuilder.setRegistryName("deployableRocketBuilder"));
         //Infrastructure machines

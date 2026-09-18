@@ -97,6 +97,8 @@ public class ARConfiguration {
     @ConfigProperty
     public boolean rocketRequireFuel = true;
     @ConfigProperty
+    public boolean enableRocketPrinter = true;
+    @ConfigProperty
     public boolean canBeFueledByHand = true;
     @ConfigProperty(needsSync = true)
     public boolean nuclearRocketsRespectArtifactGating = true;
@@ -478,6 +480,7 @@ public class ARConfiguration {
         arConfig.oxygenVentSize = config.get(PERFORMANCE, "oxygenVentSize", 32, "Radius of the O2 vent.  if atmosphereCalculationMethod is 2 or 3 then max volume is calculated from this radius.  WARNING: larger numbers can lead to lag").getInt();
 
         //Rockets
+        arConfig.enableRocketPrinter = config.get(ROCKET, "EnableRocketPrinter", true, "Enable the Rocket 3D Printer and Rocket Blueprints. Requires a restart.").getBoolean();
         arConfig.rocketRequireFuel = config.get(ROCKET, "rocketsRequireFuel", true, "Require fuel for rockets to fly.").getBoolean();
         arConfig.canBeFueledByHand = config.get(ROCKET, "canBeFueledByHand", true, "Allow rockets to be fueled by hand.").getBoolean();
         arConfig.nuclearRocketsRespectArtifactGating = config.get(ROCKET, "nuclearRocketsRespectArtifactGating", true, "Nuclear rocket should respect artifact gating for planets").getBoolean();

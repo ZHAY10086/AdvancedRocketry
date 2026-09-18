@@ -115,13 +115,12 @@ public class TileRocketAssemblingMachine extends TileEntityRFConsumer implements
             MinecraftForge.EVENT_BUS.register(this);
             registeredBus = true;
         }
-
+        bbCache = getRocketPadBounds(world, pos);
         relinkRetries = 15; // give it time
         nextRelinkAttempt = world.getTotalWorldTime() + 20;
         tryRelinkNow();
 
         // Recompute pad bounds and relink infra to any rockets already on the pad
-        bbCache = getRocketPadBounds(world, pos);
         if (bbCache == null) {
             return;
         }
@@ -711,7 +710,7 @@ public class TileRocketAssemblingMachine extends TileEntityRFConsumer implements
         final double cy = this.getPos().getY();
 
         EntityRocket rocket = new EntityRocket(world, storageChunk, stats.copy(), cx, cy, cz);
-        world.spawnEntity(rocket);
+        if (world.spawnEntity(rocket)) lastRocketID = rocket.getEntityId();
 
         NBTTagCompound nbtdata = new NBTTagCompound();
         rocket.writeToNBT(nbtdata);
@@ -1490,6 +1489,7 @@ public class TileRocketAssemblingMachine extends TileEntityRFConsumer implements
         AxisAlignedBB box = bbCache.grow(1.0e-4,1.0e-4,1.0e-4);
         java.util.List<EntityRocketBase> rockets = world.getEntitiesWithinAABB(EntityRocketBase.class, box);
         if (rockets.isEmpty()) return false;
+        if (rockets.size() == 1 && rockets.get(0) instanceof EntityRocket) lastRocketID = rockets.get(0).getEntityId();
 
         java.util.List<IInfrastructure> infraNow = getConnectedInfrastructure();
         if (infraNow.isEmpty()) return false;
@@ -1504,6 +1504,31 @@ public class TileRocketAssemblingMachine extends TileEntityRFConsumer implements
             }
         }
         return true;
+    }
+
+    @Nullable
+    public EntityRocket getLinkedRocket() {
+        if (world == null || world.isRemote || isScanning()) return null;
+        AxisAlignedBB pad = getRocketPadBounds(world, pos);
+        if (pad == null) return null;
+        AxisAlignedBB box = pad.grow(1.0E-4);
+        List<EntityRocketBase> present = world.getEntitiesWithinAABB(EntityRocketBase.class, box);
+        if (present.size() != 1 || !(present.get(0) instanceof EntityRocket)) return null;
+        net.minecraft.entity.Entity entity = world.getEntityByID(lastRocketID);
+        if (entity instanceof EntityRocket) {
+            EntityRocket rocket = (EntityRocket) entity;
+            if (!rocket.isDead && !rocket.isInFlight() && !rocket.isInOrbit() && rocket.storage != null
+                    && rocket == present.get(0)) return rocket;
+        }
+        EntityRocket rocket = (EntityRocket) present.get(0);
+        if (rocket.isDead || rocket.isInFlight() || rocket.isInOrbit() || rocket.storage == null) return null;
+        lastRocketID = rocket.getEntityId();
+        return rocket;
+    }
+
+    public boolean hasRocketOnPad(AxisAlignedBB pad) {
+        if (world == null || world.isRemote) return false;
+        return pad != null && !world.getEntitiesWithinAABB(EntityRocketBase.class, pad.grow(1.0E-4)).isEmpty();
     }
 
     private int getPredictedFuelRate(@Nullable FuelType type) {

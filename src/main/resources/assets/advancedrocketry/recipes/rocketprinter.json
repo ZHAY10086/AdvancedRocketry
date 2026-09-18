@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": ["igi", "csc", "tmt"],
+  "key": {
+    "i": {"item": "advancedrocketry:ic", "data": 3},
+    "g": {"item": "advancedrocketry:misc", "data": 0},
+    "c": {"item": "advancedrocketry:concrete"},
+    "s": {"item": "libvulpes:advstructuremachine"},
+    "t": {"type": "forge:ore_dict", "ore": "gearTitanium"},
+    "m": {"item": "minecraft:piston"}
+  },
+  "result": {"item": "advancedrocketry:rocketprinter"}
+}
