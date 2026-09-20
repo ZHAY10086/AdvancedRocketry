@@ -863,6 +863,7 @@ jei.powergeneration.time.tick=%s tick
 jei.powergeneration.time.ticks=%s ticks
 jei.powergeneration.time.seconds=%s s
 jei.powergeneration.solar.daylight=Daytime + sky access
+jei.powergeneration.solar.max.tooltip=Based on atmosphere density, star brightness, and distance.
 jei.powergeneration.solararray.scaling=Atmosphere + stellar distance
 jei.powergeneration.planetmax=%s max: %s RF/t
 jei.powergeneration.max=Max: %s RF/t

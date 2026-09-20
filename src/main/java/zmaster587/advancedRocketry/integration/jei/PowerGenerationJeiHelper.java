@@ -48,7 +48,8 @@ public final class PowerGenerationJeiHelper {
         String overworldName = DimensionManager.getInstance().getDimensionProperties(0).getName();
 
         String earthText = I18n.format("jei.powergeneration.planetmax", overworldName, formatCompactNumber(earthPower));
-        fontRenderer.drawString(earthText, LEFT_TEXT_X, STATS_Y, 0x404040);
+        int earthY = (HEIGHT - fontRenderer.FONT_HEIGHT) / 2;
+        fontRenderer.drawString(earthText, LEFT_TEXT_X, earthY, 0x404040);
 
         String maxText = I18n.format("jei.powergeneration.max", formatCompactNumber(maxPower));
         int x = WIDTH - fontRenderer.getStringWidth(maxText);
@@ -89,5 +90,15 @@ public final class PowerGenerationJeiHelper {
         long roundedTenths = Math.round(scaled * 10d);
         if (roundedTenths % 10 == 0) {return (roundedTenths / 10) + suffixes[suffix];}
         return (roundedTenths / 10) + "." + Math.abs(roundedTenths % 10) + suffixes[suffix];
+    }
+
+    public static boolean isMouseOverMax(Minecraft minecraft, int mouseX, int mouseY, long maxPower) {
+        FontRenderer fontRenderer = minecraft.fontRenderer;
+        String maxText = I18n.format("jei.powergeneration.max", formatCompactNumber(maxPower));
+        int x = WIDTH - fontRenderer.getStringWidth(maxText);
+
+        return mouseX >= x && mouseX < WIDTH
+                && mouseY >= STATS_Y
+                && mouseY < STATS_Y + fontRenderer.FONT_HEIGHT;
     }
 }

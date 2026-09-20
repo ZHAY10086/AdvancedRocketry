@@ -7,7 +7,8 @@
   - Linker slot only accepts linker and has tooltip
   - Input field tooltip explanation
   
-Powergen JEI:
+Powergen:
+- Solar array and basicGenerator JEI
 - Solar Arrays now require all 63 panels
   - Added configurable Earth surface output and final maximum output. Sol reaches the maximum; Array output no longer uses solarGeneratorMultiplier.
 - Black Hole Generator
