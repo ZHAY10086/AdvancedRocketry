@@ -1,15 +1,19 @@
 2.2.16
 - Added Rocket 3D printing and Blueprint, save rocket designs and print blueprints from connected storage
+- Fix some renderculling (more multiblock models should now stick to screen instead of dissapearing)
+- Remove obsolete Galacticraft gravity handling
 - Railgun FIXED:
   - Errormessages in GUI
   - Linker slot only accepts linker and has tooltip
   - Input field tooltip explanation
   
-- Remove obsolete Galacticraft gravity handling
+Powergen JEI:
 - Solar Arrays now require all 63 panels
   - Added configurable Earth surface output and final maximum output. Sol reaches the maximum; Array output no longer uses solarGeneratorMultiplier.
-- Fix some renderculling (more multiblock models should now stick to screen instead of dissapearing)
-
+- Black Hole Generator
+  - Added meta wildcard for config (minecraft:stone:*)
+  - Change default burntime to 100 ticks (down from 500)
+  - Default burntimes add meta wildcard
 
 2.2.15
 - Observatory:

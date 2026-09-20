@@ -13,6 +13,7 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.oredict.OreDictionary;
 import zmaster587.advancedRocketry.api.ARConfiguration;
 import zmaster587.advancedRocketry.api.AdvancedRocketryBlocks;
 import zmaster587.advancedRocketry.api.stations.ISpaceObject;
@@ -136,11 +137,19 @@ public class TileBlackHoleGenerator extends TileMultiPowerProducer implements IT
     }
 
     private int getTimeFromStack(@Nonnull ItemStack stack) {
+        int wildcardTime = 0;
+        boolean hasWildcard = false;
         for (Entry<ItemStack, Integer> i : ARConfiguration.getCurrentConfig().blackHoleGeneratorBlocks.entrySet()) {
-            if (i.getKey().getItem() == stack.getItem() && i.getKey().getItemDamage() == stack.getItemDamage())
-                return i.getValue();
+            if (i.getKey().getItem() == stack.getItem()) {
+                if (i.getKey().getItemDamage() == stack.getItemDamage())
+                    return i.getValue();
+                if (i.getKey().getItemDamage() == OreDictionary.WILDCARD_VALUE) {
+                    wildcardTime = i.getValue();
+                    hasWildcard = true;
+                }
+            }
         }
-        return ARConfiguration.getCurrentConfig().defaultItemTimeBlackHole;
+        return hasWildcard ? wildcardTime : ARConfiguration.getCurrentConfig().defaultItemTimeBlackHole;
     }
 
     private void attemptFire() {

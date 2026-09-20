@@ -463,8 +463,7 @@ public class ARConfiguration {
 
         // Black Hole Generator
         arConfig.blackHoleGeneratorTiming.clear();
-        arConfig.blackHoleGeneratorTiming.addAll(Arrays.asList(config.get(ENERGY, "blackHoleTimings", new String[]{"minecraft:stone;1", "minecraft:dirt;1", "minecraft:netherrack;1", "minecraft:cobblestone;1"},
-                "List of blocks and burn times for the black hole generator. Format: modid:block:meta;ticks where meta is optional").getStringList()));
+        arConfig.blackHoleGeneratorTiming.addAll(Arrays.asList(config.get(ENERGY, "blackHoleTimings", new String[]{"minecraft:stone:*;1", "minecraft:dirt:*;1", "minecraft:netherrack;1", "minecraft:cobblestone;1"}, "List of blocks and burn times for the black hole generator. Format: modid:block[:meta];ticks. Meta defaults to 0 when omitted; use * for all metadata variants.").getStringList()));
 
         //Planet
         arConfig.planetsMustBeDiscovered = config.get(PLANET, "planetsMustBeDiscovered", false, "Planets must be discovered in the warp controller before being visible").getBoolean();
@@ -573,9 +572,14 @@ public class ARConfiguration {
 
             int metaValue = 0;
             if (blockString.length > 2) {
-                try {metaValue = Integer.parseInt(blockString[2]);
-                } catch (NumberFormatException e) {
-                    logger.warn("Invalid meta value location for black hole generator: " + splitStr[0] + " using " + blockString[2]);
+                if ("*".equals(blockString[2])) {
+                    metaValue = OreDictionary.WILDCARD_VALUE;
+                } else {
+                    try {
+                        metaValue = Integer.parseInt(blockString[2]);
+                    } catch (NumberFormatException e) {
+                        logger.warn("Invalid meta value location for black hole generator: " + splitStr[0] + " using " + blockString[2]);
+                    }
                 }
             }
             int time = 0;
