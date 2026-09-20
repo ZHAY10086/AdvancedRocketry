@@ -16,6 +16,10 @@ import zmaster587.advancedRocketry.integration.jei.asteroids.AsteroidCategory;
 import zmaster587.advancedRocketry.integration.jei.asteroids.AsteroidRecipeHandler;
 import zmaster587.advancedRocketry.integration.jei.asteroids.AsteroidRecipeMaker;
 import zmaster587.advancedRocketry.integration.jei.asteroids.AsteroidWrapper;
+import zmaster587.advancedRocketry.integration.jei.blackHoleGenerator.BlackHoleGeneratorCategory;
+import zmaster587.advancedRocketry.integration.jei.blackHoleGenerator.BlackHoleGeneratorRecipeHandler;
+import zmaster587.advancedRocketry.integration.jei.blackHoleGenerator.BlackHoleGeneratorRecipeMaker;
+import zmaster587.advancedRocketry.integration.jei.blackHoleGenerator.BlackHoleGeneratorWrapper;
 import zmaster587.advancedRocketry.integration.jei.centrifuge.CentrifugeCategory;
 import zmaster587.advancedRocketry.integration.jei.centrifuge.CentrifugeRecipeHandler;
 import zmaster587.advancedRocketry.integration.jei.centrifuge.CentrifugeRecipeMaker;
@@ -100,6 +104,7 @@ public class ARPlugin implements IModPlugin {
     public static final String stationAssemblerUUID = "zmaster587.AR.stationAssembler";
     public static final String orbitalLaserDrillUUID = "zmaster587.AR.orbitalLaserDrill";
     public static final String asteroidsUUID = "zmaster587.AR.asteroids";
+    public static final String blackHoleGeneratorUUID = BlackHoleGeneratorCategory.UID;
     public static final String gasGiantsUUID = GasGiantCategory.UID;
     public static IJeiHelpers jeiHelpers;
 
@@ -109,6 +114,7 @@ public class ARPlugin implements IModPlugin {
     private static final List<AsteroidWrapper> currentAsteroidRecipes = new ArrayList<>();
     private static final List<GasGiantWrapper> currentGasGiantRecipes = new ArrayList<>();
     private static final List<OrbitalLaserDrillWrapper> currentOrbitalLaserRecipes = new ArrayList<>();
+    private static final List<BlackHoleGeneratorWrapper> currentBlackHoleGeneratorRecipes = new ArrayList<>();
     private static int dimensionRecipeRefreshDelay = -1;
 
 
@@ -128,6 +134,20 @@ public class ARPlugin implements IModPlugin {
 
         IRecipeRegistry recipeRegistry = jeiRuntime.getRecipeRegistry();
         if (recipeRegistry == null) return;
+
+        // Black hole Generator
+        for (BlackHoleGeneratorWrapper recipe : currentBlackHoleGeneratorRecipes) {
+            recipeRegistry.removeRecipe(recipe, blackHoleGeneratorUUID);
+        }
+        currentBlackHoleGeneratorRecipes.clear();
+
+        List<BlackHoleGeneratorWrapper> rebuiltBlackHoleRecipes = BlackHoleGeneratorRecipeMaker.getRecipes();
+        for (BlackHoleGeneratorWrapper recipe : rebuiltBlackHoleRecipes) {
+            recipeRegistry.addRecipe(recipe, blackHoleGeneratorUUID);
+        }
+        currentBlackHoleGeneratorRecipes.addAll(rebuiltBlackHoleRecipes);
+
+        // Gas mining
         for (GasGiantWrapper recipe : currentGasGiantRecipes) {
             recipeRegistry.removeRecipe(recipe, gasGiantsUUID);
         }
@@ -142,6 +162,7 @@ public class ARPlugin implements IModPlugin {
             recipeRegistry.removeRecipe(recipe, orbitalLaserDrillUUID);
         }
 
+        // Orbital laser
         currentOrbitalLaserRecipes.clear();
         if (orbitalLaserCategory != null && isVoidDrillJeiEnabled()) {
             List<OrbitalLaserDrillWrapper> rebuiltLaserRecipes =
@@ -153,6 +174,8 @@ public class ARPlugin implements IModPlugin {
             }
             currentOrbitalLaserRecipes.addAll(rebuiltLaserRecipes);
         }
+
+        // Asteroids
         if (asteroidCategory != null && !asteroidCategory.isLayoutInitialized()) {
             for (AsteroidWrapper recipe : currentAsteroidRecipes)
                 recipeRegistry.removeRecipe(recipe, asteroidsUUID);
@@ -202,6 +225,7 @@ public class ARPlugin implements IModPlugin {
                 new FuelingStationCategory(guiHelper),
                 new Co2ScrubberCategory(guiHelper),
                 new StationAssemblerCategory(guiHelper),
+                new BlackHoleGeneratorCategory(guiHelper),
                 asteroidCategory,
                 new GasGiantCategory(guiHelper),
                 orbitalLaserCategory
@@ -257,6 +281,7 @@ public class ARPlugin implements IModPlugin {
                 new FuelingStationRecipeHandler(),
                 new Co2ScrubberRecipeHandler(),
                 new StationAssemblerRecipeHandler(),
+                new BlackHoleGeneratorRecipeHandler(),
                 new AsteroidRecipeHandler(),
                 new GasGiantRecipeHandler(),
                 new OrbitalLaserDrillRecipeHandler()
@@ -278,6 +303,13 @@ public class ARPlugin implements IModPlugin {
         registry.addRecipes(Co2ScrubberRecipeMaker.getRecipes(jeiHelpers), co2ScrubberUUID);
         registry.addRecipes(StationAssemblerRecipeMaker.getMachineRecipes(jeiHelpers, TileStationAssembler.class),stationAssemblerUUID);
 
+        // black hole generator
+        List<BlackHoleGeneratorWrapper> blackHoleRecipes = BlackHoleGeneratorRecipeMaker.getRecipes();
+        registry.addRecipes(blackHoleRecipes, blackHoleGeneratorUUID);
+        currentBlackHoleGeneratorRecipes.clear();
+        currentBlackHoleGeneratorRecipes.addAll(blackHoleRecipes);
+
+        registry.addRecipeCatalyst(new ItemStack(AdvancedRocketryBlocks.blockBlackHoleGenerator), blackHoleGeneratorUUID);
         registry.addRecipeCatalyst(new ItemStack(AdvancedRocketryBlocks.blockRollingMachine), rollingMachineUUID);
         registry.addRecipeCatalyst(new ItemStack(AdvancedRocketryBlocks.blockLathe), latheUUID);
         registry.addRecipeCatalyst(new ItemStack(AdvancedRocketryBlocks.blockPrecisionAssembler), precisionAssemblerUUID);

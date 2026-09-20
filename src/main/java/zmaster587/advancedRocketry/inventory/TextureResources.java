@@ -84,7 +84,7 @@ public class TextureResources {
     public static final ProgressBarImage latheProgressBar = new ProgressBarImage(185, 24, 23, 4, 185, 28, 23, 4, EnumFacing.EAST, TextureResources.progressBars);
     public static final ProgressBarImage rollingMachineProgressBar = new ProgressBarImage(84, 66, 41, 32, 125, 66, 41, 32, EnumFacing.EAST, TextureResources.progressBars);
     public static final ProgressBarImage terraformProgressBar = new ProgressBarImage(16, 109, 106, 30, 16, 138, 106, 30, EnumFacing.EAST, TextureResources.progressBars);
-
+    public static final ProgressBarImage blackHoleGeneratorProgressBar = new ProgressBarImage(185, 32, 11, 15, 196, 32, 11, 15, EnumFacing.UP, TextureResources.progressBars);
 
     public static final Map<String, ResourceLocation> planetResources = new HashMap<>();
 }

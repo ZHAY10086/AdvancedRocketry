@@ -54,7 +54,7 @@ public class ARConfiguration {
     private final static String COMPAT = "Compatibility";
     public static Logger logger = LogManager.getLogger(Constants.modId);
 
-    private static String[] sealableBlockWhiteList, sealableBlockBlackList, breakableTorches, blackListRocketBlocksStr, harvestableGasses, spawnableGasses, entityList, geodeOres, blackHoleGeneratorTiming, orbitalLaserOres, liquidMonopropellant, liquidBipropellantFuel, liquidBipropellantOxidizer, liquidNuclearWorkingFluid;
+    private static String[] sealableBlockWhiteList, sealableBlockBlackList, breakableTorches, blackListRocketBlocksStr, harvestableGasses, spawnableGasses, entityList, geodeOres, orbitalLaserOres, liquidMonopropellant, liquidBipropellantFuel, liquidBipropellantOxidizer, liquidNuclearWorkingFluid;
     private static ARConfiguration currentConfig = new ARConfiguration();
     private static ARConfiguration diskConfig;
     private static boolean usingServerConfig = false;
@@ -286,10 +286,12 @@ public class ARConfiguration {
     public float crystalliserMaximumGravity;
     @ConfigProperty
     public boolean allowZeroGSpacestations;
-    @ConfigProperty
+    @ConfigProperty(needsSync = true)
     public float blackHolePowerMultiplier;
-    @ConfigProperty
+    @ConfigProperty(needsSync = true)
     public int defaultItemTimeBlackHole;
+    @ConfigProperty(needsSync = true, internalType = String.class)
+    public LinkedList<String> blackHoleGeneratorTiming = new LinkedList<>();
     @ConfigProperty
     public Map<ItemStack, Integer> blackHoleGeneratorBlocks = new HashMap<>();
     @ConfigProperty
@@ -366,6 +368,9 @@ public class ARConfiguration {
     public static void loadConfigFromServer(ARConfiguration config) {
         if (usingServerConfig)
             throw new IllegalStateException("Cannot load server config when already using server config!");
+
+        // Rebuild client-side derived BHG data from the server-authoritative raw configuration before making this configuration active.
+        config.rebuildBlackHoleGeneratorBlocks();
 
         diskConfig = currentConfig;
         currentConfig = config;
@@ -455,7 +460,11 @@ public class ARConfiguration {
         arConfig.microwaveRecieverMulitplier = (float) config.get(ENERGY, "MicrowaveRecieverMultiplier", 1f, "Multiplier for microwave receiver power output.").getDouble();
         arConfig.defaultItemTimeBlackHole = config.get(ENERGY, "defaultBurnTime", 500, "Burn time in ticks for items not listed in blackHoleTimings.").getInt();
         arConfig.blackHolePowerMultiplier = config.get(ENERGY, "blackHoleGeneratorMultiplier", 1, "Multiplier for black hole generator power output.").getInt();
-        blackHoleGeneratorTiming = config.get(ENERGY, "blackHoleTimings", new String[]{"minecraft:stone;1", "minecraft:dirt;1", "minecraft:netherrack;1", "minecraft:cobblestone;1"}, "List of blocks and burn times for the black hole generator. Format: modid:block:meta;ticks where meta is optional").getStringList();
+
+        // Black Hole Generator
+        arConfig.blackHoleGeneratorTiming.clear();
+        arConfig.blackHoleGeneratorTiming.addAll(Arrays.asList(config.get(ENERGY, "blackHoleTimings", new String[]{"minecraft:stone;1", "minecraft:dirt;1", "minecraft:netherrack;1", "minecraft:cobblestone;1"},
+                "List of blocks and burn times for the black hole generator. Format: modid:block:meta;ticks where meta is optional").getStringList()));
 
         //Planet
         arConfig.planetsMustBeDiscovered = config.get(PLANET, "planetsMustBeDiscovered", false, "Planets must be discovered in the warp controller before being visible").getBoolean();
@@ -552,6 +561,35 @@ public class ARConfiguration {
                 logger.warn("Invalid number \"" + s + "\" for laser dimid blacklist");
             }
         }
+    }
+
+    public void rebuildBlackHoleGeneratorBlocks() {
+        Map<ItemStack, Integer> rebuiltBlocks = new HashMap<>();
+
+        for (String str : blackHoleGeneratorTiming) {
+            String[] splitStr = str.split(";");
+            String[] blockString = splitStr[0].split(":");
+            Item block = Item.REGISTRY.getObject(new ResourceLocation(blockString[0], blockString[1]));
+
+            int metaValue = 0;
+            if (blockString.length > 2) {
+                try {metaValue = Integer.parseInt(blockString[2]);
+                } catch (NumberFormatException e) {
+                    logger.warn("Invalid meta value location for black hole generator: " + splitStr[0] + " using " + blockString[2]);
+                }
+            }
+            int time = 0;
+            try {time = Integer.parseInt(splitStr[1]);
+            } catch (NumberFormatException e) {logger.warn("Invalid time value for black hole generator: " + str);
+            }
+
+            if (block == null) {
+                logger.warn("'" + splitStr[0] + "' is not a valid Block");
+            } else {
+                rebuiltBlocks.put(new ItemStack(block, 1, metaValue), time);
+            }
+        }
+        blackHoleGeneratorBlocks = rebuiltBlocks;
     }
 
     public static void loadPostInit() {
@@ -657,35 +695,7 @@ public class ARConfiguration {
         breakableTorches = null;
 
         logger.info("Start registering blackhole generator blocks");
-        for (String str : blackHoleGeneratorTiming) {
-            String[] splitStr = str.split(";");
-
-            String[] blockString = splitStr[0].split(":");
-
-            Item block = Item.REGISTRY.getObject(new ResourceLocation(blockString[0], blockString[1]));
-            int metaValue = 0;
-
-            if (blockString.length > 2) {
-                try {
-                    metaValue = Integer.parseInt(blockString[2]);
-                } catch (NumberFormatException e) {
-                    logger.warn("Invalid meta value location for black hole generator: " + splitStr[0] + " using " + blockString[2]);
-                }
-            }
-
-            int time = 0;
-
-            try {
-                time = Integer.parseInt(splitStr[1]);
-            } catch (NumberFormatException e) {
-                logger.warn("Invalid time value for black hole generator: " + str);
-            }
-
-            if (block == null)
-                logger.warn("'" + splitStr[0] + "' is not a valid Block");
-            else
-                arConfig.blackHoleGeneratorBlocks.put(new ItemStack(block, 1, metaValue), time);
-        }
+        arConfig.rebuildBlackHoleGeneratorBlocks();
         logger.info("End registering blackhole generator blocks");
         breakableTorches = null;
 

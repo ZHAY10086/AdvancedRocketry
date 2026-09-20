@@ -855,6 +855,13 @@ commands.weather.cannot_rain=Cannot start a rain here
 commands.weather.cannot_thunder=Cannot start a thunder here
 
 # Jeistuff
+jei.powergeneration.burntime=%s
+jei.powergeneration.output=%s RF/t
+jei.powergeneration.total=%s RF
+jei.powergeneration.anyother=Any other item
+jei.powergeneration.time.tick=%s tick
+jei.powergeneration.time.ticks=%s ticks
+jei.powergeneration.time.seconds=%s s
 jei.machinerecipe.power=Power:
 jei.machinerecipe.time=Time:
 jei.sb.satellitepreview=Ready for orbit!
@@ -1430,9 +1437,9 @@ tooltip.advancedrocketry.elevatorchip.shift.1=§fLinks an elevator pad/destinati
 
 ## Multiblocks
 # Black Hole Generator
-tooltip.advancedrocketry.blackholegen=Generates Power from compressed mass
+tooltip.advancedrocketry.blackholegen=Generates Power from mass
 tooltip.advancedrocketry.blackholegen.shift.1=§bUse Holo-Projector!
-
+tooltip.advancedrocketry.blackholegen.alt.1=§fRequires orbiting a Black Hole
 # Microwave Receiver
 tooltip.advancedrocketry.microwavereceiver=Receives Power from Solar Satellites
 tooltip.advancedrocketry.microwavereceiver.shift.1=5x5 Multiblock
