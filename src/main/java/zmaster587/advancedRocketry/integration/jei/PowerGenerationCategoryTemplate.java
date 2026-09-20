@@ -39,9 +39,10 @@ public abstract class PowerGenerationCategoryTemplate<T extends IRecipeWrapper> 
             slot.draw(minecraft, PowerGenerationJeiHelper.FUEL_X, PowerGenerationJeiHelper.FUEL_Y);
         }
 
-        minecraft.getTextureManager().bindTexture(TextureResources.progressBars);
-        generationProgress.renderProgressBar(PowerGenerationJeiHelper.PROGRESS_X, PowerGenerationJeiHelper.PROGRESS_Y, (Minecraft.getSystemTime() % 3000) / 3000f, minecraft.currentScreen);
-
+        if (generationProgress != null) {
+            minecraft.getTextureManager().bindTexture(TextureResources.progressBars);
+            generationProgress.renderProgressBar(PowerGenerationJeiHelper.PROGRESS_X, PowerGenerationJeiHelper.PROGRESS_Y, (Minecraft.getSystemTime() % 3000) / 3000f, minecraft.currentScreen);
+        }
         PowerGenerationJeiHelper.drawPowerBar(minecraft);
     }
 

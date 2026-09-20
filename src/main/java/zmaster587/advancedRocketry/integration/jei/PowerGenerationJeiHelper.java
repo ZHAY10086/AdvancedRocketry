@@ -3,6 +3,7 @@ package zmaster587.advancedRocketry.integration.jei;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.resources.I18n;
+import zmaster587.advancedRocketry.dimension.DimensionManager;
 import zmaster587.libVulpes.gui.CommonResources;
 
 public final class PowerGenerationJeiHelper {
@@ -28,7 +29,6 @@ public final class PowerGenerationJeiHelper {
     public static void drawPowerBar(Minecraft minecraft) {
         minecraft.getTextureManager().bindTexture(CommonResources.genericBackground);
         minecraft.currentScreen.drawTexturedModalRect(POWER_BAR_X, POWER_BAR_Y, 176, 18, 8, 40);
-        minecraft.currentScreen.drawTexturedModalRect(POWER_BAR_X + 2, POWER_BAR_Y + 43, 15, 171, 4, 9);
         minecraft.currentScreen.drawTexturedModalRect(POWER_BAR_X + 1, POWER_BAR_Y + 1, 0, 171, 6, 38);
     }
 
@@ -40,14 +40,24 @@ public final class PowerGenerationJeiHelper {
     }
 
     public static void drawTotalPower(Minecraft minecraft, long totalPower) {
-        String text = I18n.format("jei.powergeneration.total", totalPower);
+        String text = I18n.format("jei.powergeneration.total", formatCompactNumber(totalPower));
         minecraft.fontRenderer.drawString(text, LEFT_TEXT_X, STATS_Y, 0x404040);
     }
+    public static void drawEarthAndMax(Minecraft minecraft, long earthPower, long maxPower) {
+        FontRenderer fontRenderer = minecraft.fontRenderer;
+        String overworldName = DimensionManager.getInstance().getDimensionProperties(0).getName();
 
+        String earthText = I18n.format("jei.powergeneration.planetmax", overworldName, formatCompactNumber(earthPower));
+        fontRenderer.drawString(earthText, LEFT_TEXT_X, STATS_Y, 0x404040);
+
+        String maxText = I18n.format("jei.powergeneration.max", formatCompactNumber(maxPower));
+        int x = WIDTH - fontRenderer.getStringWidth(maxText);
+        fontRenderer.drawString(maxText, x, STATS_Y, 0x404040);
+    }
     public static void drawPowerPerTick(Minecraft minecraft, long powerPerTick) {
         FontRenderer fontRenderer = minecraft.fontRenderer;
-        String text = I18n.format("jei.powergeneration.output", powerPerTick);
-        int x = POWER_BAR_X - 4 - fontRenderer.getStringWidth(text);
+        String text = I18n.format("jei.powergeneration.output", formatCompactNumber(powerPerTick));
+        int x = WIDTH - fontRenderer.getStringWidth(text);
         fontRenderer.drawString(text, x, STATS_Y, 0x404040);
     }
 
@@ -61,5 +71,23 @@ public final class PowerGenerationJeiHelper {
         }
 
         return I18n.format("jei.powergeneration.time.ticks", ticks);
+    }
+
+    public static String formatCompactNumber(long value) {
+        if (Math.abs(value) < 1000) {
+            return Long.toString(value);
+        }
+
+        String[] suffixes = {"", "K", "M", "B", "T"};
+        double scaled = value;
+        int suffix = 0;
+
+        while (Math.abs(scaled) >= 999.5d && suffix < suffixes.length - 1) {
+            scaled /= 1000d;
+            suffix++;
+        }
+        long roundedTenths = Math.round(scaled * 10d);
+        if (roundedTenths % 10 == 0) {return (roundedTenths / 10) + suffixes[suffix];}
+        return (roundedTenths / 10) + "." + Math.abs(roundedTenths % 10) + suffixes[suffix];
     }
 }

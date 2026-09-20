@@ -66,6 +66,14 @@ import zmaster587.advancedRocketry.integration.jei.sawmill.SawMillRecipeMaker;
 import zmaster587.advancedRocketry.integration.jei.satelliteBuilder.SatelliteBuilderCategory;
 import zmaster587.advancedRocketry.integration.jei.satelliteBuilder.SatelliteBuilderRecipeHandler;
 import zmaster587.advancedRocketry.integration.jei.satelliteBuilder.SatelliteBuilderRecipeMaker;
+import zmaster587.advancedRocketry.integration.jei.solarArray.SolarArrayCategory;
+import zmaster587.advancedRocketry.integration.jei.solarArray.SolarArrayRecipeHandler;
+import zmaster587.advancedRocketry.integration.jei.solarArray.SolarArrayRecipeMaker;
+import zmaster587.advancedRocketry.integration.jei.solarArray.SolarArrayWrapper;
+import zmaster587.advancedRocketry.integration.jei.solarGenerator.SolarGeneratorCategory;
+import zmaster587.advancedRocketry.integration.jei.solarGenerator.SolarGeneratorRecipeHandler;
+import zmaster587.advancedRocketry.integration.jei.solarGenerator.SolarGeneratorRecipeMaker;
+import zmaster587.advancedRocketry.integration.jei.solarGenerator.SolarGeneratorWrapper;
 import zmaster587.advancedRocketry.integration.jei.stationAssembler.StationAssemblerCategory;
 import zmaster587.advancedRocketry.integration.jei.stationAssembler.StationAssemblerRecipeHandler;
 import zmaster587.advancedRocketry.integration.jei.stationAssembler.StationAssemblerRecipeMaker;
@@ -106,6 +114,8 @@ public class ARPlugin implements IModPlugin {
     public static final String asteroidsUUID = "zmaster587.AR.asteroids";
     public static final String blackHoleGeneratorUUID = BlackHoleGeneratorCategory.UID;
     public static final String gasGiantsUUID = GasGiantCategory.UID;
+    public static final String solarGeneratorUUID = SolarGeneratorCategory.UID;
+    public static final String solarArrayUUID = SolarArrayCategory.UID;
     public static IJeiHelpers jeiHelpers;
 
     private static IJeiRuntime jeiRuntime;
@@ -226,6 +236,8 @@ public class ARPlugin implements IModPlugin {
                 new Co2ScrubberCategory(guiHelper),
                 new StationAssemblerCategory(guiHelper),
                 new BlackHoleGeneratorCategory(guiHelper),
+                new SolarGeneratorCategory(guiHelper),
+                new SolarArrayCategory(guiHelper),
                 asteroidCategory,
                 new GasGiantCategory(guiHelper),
                 orbitalLaserCategory
@@ -282,6 +294,8 @@ public class ARPlugin implements IModPlugin {
                 new Co2ScrubberRecipeHandler(),
                 new StationAssemblerRecipeHandler(),
                 new BlackHoleGeneratorRecipeHandler(),
+                new SolarGeneratorRecipeHandler(),
+                new SolarArrayRecipeHandler(),
                 new AsteroidRecipeHandler(),
                 new GasGiantRecipeHandler(),
                 new OrbitalLaserDrillRecipeHandler()
@@ -303,12 +317,19 @@ public class ARPlugin implements IModPlugin {
         registry.addRecipes(Co2ScrubberRecipeMaker.getRecipes(jeiHelpers), co2ScrubberUUID);
         registry.addRecipes(StationAssemblerRecipeMaker.getMachineRecipes(jeiHelpers, TileStationAssembler.class),stationAssemblerUUID);
 
+        // ### POWERGEN ###
+        // solar
+        registry.addRecipes(SolarGeneratorRecipeMaker.getRecipes(), solarGeneratorUUID);
+        registry.addRecipes(SolarArrayRecipeMaker.getRecipes(), solarArrayUUID);
+
         // black hole generator
         List<BlackHoleGeneratorWrapper> blackHoleRecipes = BlackHoleGeneratorRecipeMaker.getRecipes();
         registry.addRecipes(blackHoleRecipes, blackHoleGeneratorUUID);
         currentBlackHoleGeneratorRecipes.clear();
         currentBlackHoleGeneratorRecipes.addAll(blackHoleRecipes);
 
+        registry.addRecipeCatalyst(new ItemStack(AdvancedRocketryBlocks.blockSolarGenerator), solarGeneratorUUID);
+        registry.addRecipeCatalyst(new ItemStack(AdvancedRocketryBlocks.blockSolarArray), solarArrayUUID);
         registry.addRecipeCatalyst(new ItemStack(AdvancedRocketryBlocks.blockBlackHoleGenerator), blackHoleGeneratorUUID);
         registry.addRecipeCatalyst(new ItemStack(AdvancedRocketryBlocks.blockRollingMachine), rollingMachineUUID);
         registry.addRecipeCatalyst(new ItemStack(AdvancedRocketryBlocks.blockLathe), latheUUID);

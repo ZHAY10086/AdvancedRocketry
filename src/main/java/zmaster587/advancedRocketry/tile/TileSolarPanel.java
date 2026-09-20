@@ -16,7 +16,7 @@ import java.util.List;
 public class TileSolarPanel extends TileInventoriedForgePowerMachine {
 
     ModuleText text;
-
+    public static final int MAX_POWER_PER_TICK = 10;
     public TileSolarPanel() {
         super(10000, 1);
         text = new ModuleText(60, 40, LibVulpes.proxy.getLocalizedString("msg.solar.collectingEnergy"), 0x2f2f2f);
@@ -47,12 +47,13 @@ public class TileSolarPanel extends TileInventoriedForgePowerMachine {
     @Override
     public List<ModuleBase> getModules(int ID, EntityPlayer player) {
         List<ModuleBase> modules = super.getModules(ID, player);
-
         modules.add(text);
-
         return modules;
     }
 
+    public static int getPowerForInsolation(double insolationMultiplier) {
+        return (int) Math.min((1.0005d * 2d * ARConfiguration.getCurrentConfig().solarGeneratorMult * insolationMultiplier), MAX_POWER_PER_TICK);
+    }
 
     @Override
     public int getPowerPerOperation() {
@@ -61,13 +62,11 @@ public class TileSolarPanel extends TileInventoriedForgePowerMachine {
         //Slight adjustment to make Earth 0.9995 into a 1.0
         //Then multiplied by two for 520W = 1 RF/t becoming 2 RF/t @ 100% efficiency
         //Makes solar panels not return 0 everywhere
-        return (int) Math.min((1.0005d * 2d * ARConfiguration.getCurrentConfig().solarGeneratorMult * insolationMultiplier), 10);
+        return getPowerForInsolation(insolationMultiplier);
     }
 
     @Override
-    public void onGeneratePower() {
-
-    }
+    public void onGeneratePower() {}
 
     @Override
     public String getModularInventoryName() {

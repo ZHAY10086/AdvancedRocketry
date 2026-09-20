@@ -236,11 +236,11 @@ public class ARConfiguration {
     public HashMap<String, Asteroid> asteroidTypes = new HashMap<>();
     @ConfigProperty
     public int oxygenVentSize;
-    @ConfigProperty
+    @ConfigProperty(needsSync = true)
     public int solarGeneratorMult;
-    @ConfigProperty
+    @ConfigProperty(needsSync = true)
     public int solarArrayEarthOutput = 200;
-    @ConfigProperty
+    @ConfigProperty(needsSync = true)
     public int solarArrayMaxOutput = 8192;
     @ConfigProperty
     public boolean gravityAffectsFuel;
