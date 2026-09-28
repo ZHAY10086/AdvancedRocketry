@@ -667,17 +667,10 @@ public class TileFuelingStation extends TileInventoriedRFConsumerTank implements
     public void onChunkUnload() {
         super.onChunkUnload();
         if (world == null || world.isRemote) return;
-
-        // Clear caches
         lastFuelStr = lastOxStr = lastWorkStr = null;
         cachedFuelFluid = cachedOxFluid = cachedWorkFluid = null;
         lastRs = null;
         fuelingActive = false;
-        if (AdvancedRocketryBlocks.blockFuelingStation instanceof BlockTileRedstoneEmitter) {
-            ((BlockTileRedstoneEmitter) AdvancedRocketryBlocks.blockFuelingStation)
-                    .setRedstoneState(world, world.getBlockState(pos), pos, false);
-        }
-        markDirty();
     }
 
     @Override
