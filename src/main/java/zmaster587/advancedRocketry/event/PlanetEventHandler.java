@@ -97,16 +97,6 @@ public class PlanetEventHandler {
         PlanetEventHandler.endTime = endTime;
         PlanetEventHandler.duration = duration;
     }
-/*
-    public static void modifyChunk(World world, WorldProviderPlanet provider, Chunk chunk) {
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) {
-                BiomeHandler.changeBiome(world, ((ChunkManagerPlanet) ((WorldProviderPlanet) world.provider).chunkMgrTerraformed).getBiomeGenAt(x + chunk.x * 16, z + chunk.z * 16), new BlockPos(x + chunk.x * 16, 0, z + chunk.z * 16));
-            }
-        }
-    }
-
- */
 
     @SubscribeEvent
     public void onCrafting(net.minecraftforge.fml.common.gameevent.PlayerEvent.ItemCraftedEvent event) {
@@ -392,12 +382,10 @@ public class PlanetEventHandler {
     @SideOnly(Side.CLIENT)
     public void fogColor(FogColors event) {
 
-
         IBlockState state = ActiveRenderInfo.getBlockStateAtEntityViewpoint(event.getEntity().world, event.getEntity(), (float) event.getRenderPartialTicks());
 
         if (state.getMaterial() == Material.WATER)
             return;
-
 
         DimensionProperties properties = DimensionManager.getInstance().getDimensionProperties(event.getEntity().dimension);
         if (properties != null) {
@@ -424,7 +412,6 @@ public class PlanetEventHandler {
                     event.setGreen((float) amt);
                     event.setBlue((float) amt);
                 }
-
             }
         }
     }
@@ -441,22 +428,11 @@ public class PlanetEventHandler {
     }
 
     @SubscribeEvent
-    public void serverTickEvent(TickEvent.WorldTickEvent event) {
-    }
+    public void serverTickEvent(TickEvent.WorldTickEvent event) {}
 
     @SubscribeEvent
     public void onChunkLoad(ChunkEvent.Load event) {
-
         DimensionManager.getInstance().getDimensionProperties(event.getWorld().provider.getDimension()).add_chunk_to_terraforming_list(event.getChunk());
-        //Do not modify all at once, this causes !!!EXTREME!!! lag
-        /*
-        if (zmaster587.advancedRocketry.api.ARConfiguration.getCurrentConfig().enableTerraforming && event.getWorld().provider.getClass() == WorldProviderPlanet.class) {
-            if (DimensionManager.getInstance().getDimensionProperties(event.getWorld().provider.getDimension()).isTerraformed()) {
-                Chunk chunk = event.getWorld().getChunkFromChunkCoords(event.getChunkX(), event.getChunkZ());
-                modifyChunk(event.getWorld(), (WorldProviderPlanet) event.getWorld().provider, chunk);
-            }
-        }
-         */
     }
 
     @SubscribeEvent
@@ -469,7 +445,6 @@ public class PlanetEventHandler {
         DimensionProperties properties = DimensionManager.getInstance().getDimensionProperties(event.getEntity().dimension);
         if (properties != null && event.getState().getBlock() != Blocks.WATER && event.getState().getBlock() != Blocks.LAVA) {//& properties.atmosphereDensity > 125) {
             GlStateManager.setFog(GlStateManager.FogMode.LINEAR);
-
 
             float f1 = event.getFarPlaneDistance();
             float near;
