@@ -366,6 +366,7 @@ public class TileRailgun extends TileMultiPowerConsumer implements IInventory, I
 
     @Override
     public void onLoad() {
+        if (world == null || world.isRemote) return;
         if (ticket == null) {
             ticket = ForgeChunkManager.requestTicket(AdvancedRocketry.instance, this.world, Type.NORMAL);
             if (ticket != null)
