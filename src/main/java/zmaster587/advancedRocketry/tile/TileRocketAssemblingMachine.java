@@ -16,10 +16,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.ITickable;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
-import net.minecraftforge.common.MinecraftForge;
+import zmaster587.advancedRocketry.event.PlanetEventHandler;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import zmaster587.advancedRocketry.api.*;
 import zmaster587.advancedRocketry.api.RocketEvent.RocketLandedEvent;
@@ -100,7 +99,7 @@ public class TileRocketAssemblingMachine extends TileEntityRFConsumer implements
         prevProgress = 0;
     }
 
-    private boolean registeredBus = false;
+    private boolean registeredRocketEvents = false;
     protected boolean handlesRocketLifecycleEvents() {return true;}
 
     @Override
@@ -111,10 +110,8 @@ public class TileRocketAssemblingMachine extends TileEntityRFConsumer implements
         if (!handlesRocketLifecycleEvents()) {
             return;
         }
-        if (!registeredBus) {
-            MinecraftForge.EVENT_BUS.register(this);
-            registeredBus = true;
-        }
+        PlanetEventHandler.registerRocketListener(this);
+        registeredRocketEvents = true;
         bbCache = getRocketPadBounds(world, pos);
         relinkRetries = 15; // give it time
         nextRelinkAttempt = world.getTotalWorldTime() + 20;
@@ -142,7 +139,7 @@ public class TileRocketAssemblingMachine extends TileEntityRFConsumer implements
     @Override
     public void invalidate() {
         super.invalidate();
-        unregisterFromBus();
+        unregisterRocketEvents();
         relinkRetries = 0;
         nextRelinkAttempt = 0L;
         finishedStatusStickUntil = 0L;
@@ -164,16 +161,16 @@ public class TileRocketAssemblingMachine extends TileEntityRFConsumer implements
     @Override
     public void onChunkUnload() {
         super.onChunkUnload();
-        unregisterFromBus();
+        unregisterRocketEvents();
         relinkRetries = 0;
         nextRelinkAttempt = 0L;
         finishedStatusStickUntil = 0L;
     }
 
-    private void unregisterFromBus() {
-        if (registeredBus) {
-            MinecraftForge.EVENT_BUS.unregister(this);
-            registeredBus = false;
+    private void unregisterRocketEvents() {
+        if (registeredRocketEvents) {
+            PlanetEventHandler.unregisterRocketListener(this);
+            registeredRocketEvents = false;
         }
     }
 
@@ -1389,7 +1386,6 @@ public class TileRocketAssemblingMachine extends TileEntityRFConsumer implements
         return (dx * dx + dz * dz) <= ROCKET_LANDING_PREFILTER_RADIUS_SQ;
     }
 
-    @SubscribeEvent
     public void onRocketLand(RocketLandedEvent e) {
         if (!handlesRocketLifecycleEvents()) return;
         if (world == null || e.world == null || e.world.isRemote || e.world != this.world) return;

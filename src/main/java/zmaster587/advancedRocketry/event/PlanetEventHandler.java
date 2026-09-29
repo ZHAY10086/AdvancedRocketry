@@ -16,12 +16,14 @@ import net.minecraft.init.Items;
 import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProvider;
 import net.minecraft.world.WorldServer;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraftforge.client.event.EntityViewRenderEvent.FogColors;
 import net.minecraftforge.client.event.EntityViewRenderEvent.RenderFogEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
@@ -37,6 +39,7 @@ import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent.ClientConnectedToServerEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent.ClientDisconnectionFromServerEvent;
@@ -49,6 +52,7 @@ import zmaster587.advancedRocketry.api.ARConfiguration;
 import zmaster587.advancedRocketry.api.AdvancedRocketryBlocks;
 import zmaster587.advancedRocketry.api.AdvancedRocketryItems;
 import zmaster587.advancedRocketry.api.IPlanetaryProvider;
+import zmaster587.advancedRocketry.api.RocketEvent;
 import zmaster587.advancedRocketry.api.stations.ISpaceObject;
 import zmaster587.advancedRocketry.atmosphere.AtmosphereHandler;
 import zmaster587.advancedRocketry.atmosphere.AtmosphereType;
@@ -63,6 +67,10 @@ import zmaster587.advancedRocketry.network.PacketSpaceStationInfo;
 import zmaster587.advancedRocketry.network.PacketStellarInfo;
 import zmaster587.advancedRocketry.stations.SpaceObjectManager;
 import zmaster587.advancedRocketry.stations.SpaceStationObject;
+import zmaster587.advancedRocketry.tile.TileRocketAssemblingMachine;
+import zmaster587.advancedRocketry.tile.infrastructure.TileRocketMonitoringStation;
+import zmaster587.advancedRocketry.tile.station.TileLandingPad;
+import zmaster587.advancedRocketry.util.WeakIdentityRegistry;
 import zmaster587.advancedRocketry.util.SpawnListEntryNBT;
 import zmaster587.advancedRocketry.util.TransitionEntity;
 import zmaster587.advancedRocketry.world.provider.WorldProviderPlanet;
@@ -74,8 +82,102 @@ import zmaster587.libVulpes.util.HashedBlockPosition;
 
 import javax.annotation.Nonnull;
 import java.util.*;
+import java.lang.ref.WeakReference;
+import java.util.function.Consumer;
 
 public class PlanetEventHandler {
+
+    // Forge owns only this shared handler. Neither registry owns a tile or its world.
+    private static final WeakIdentityRegistry<TileEntity> serverRocketListeners = new WeakIdentityRegistry<>();
+    private static final WeakIdentityRegistry<TileEntity> clientRocketListeners = new WeakIdentityRegistry<>();
+
+    public static void registerRocketListener(TileEntity tile) {
+        if (tile.getWorld() == null) return;
+        (tile.getWorld().isRemote ? clientRocketListeners : serverRocketListeners).add(tile);
+    }
+
+    public static void unregisterRocketListener(TileEntity tile) {
+        serverRocketListeners.remove(tile);
+        clientRocketListeners.remove(tile);
+    }
+
+    private static boolean isLoadedRocketListener(TileEntity tile) {
+        World world = tile.getWorld();
+        if (tile.isInvalid() || world == null) return false;
+        // Never load a chunk or create a tile while delivering an event.
+        Chunk chunk = world.getChunkProvider().getLoadedChunk(tile.getPos().getX() >> 4, tile.getPos().getZ() >> 4);
+        return chunk != null && chunk.isLoaded()
+                && chunk.getTileEntity(tile.getPos(), Chunk.EnumCreateEntityType.CHECK) == tile;
+    }
+
+    private static void dispatchRocketEvent(RocketEvent event, Consumer<TileEntity> callback) {
+        if (event.world == null) return;
+        WeakIdentityRegistry<TileEntity> listeners = event.world.isRemote ? clientRocketListeners : serverRocketListeners;
+        for (WeakReference<TileEntity> entry : listeners.snapshot()) {
+            // Match Forge's default receiveCanceled=false for every individual callback.
+            if (event.isCancelable() && event.isCanceled()) break;
+            TileEntity tile = entry.get();
+            if (tile != null && isLoadedRocketListener(tile)) callback.accept(tile);
+        }
+    }
+
+    @SubscribeEvent
+    public void onRocketLanded(RocketEvent.RocketLandedEvent event) {
+        dispatchRocketEvent(event, tile -> {
+            if (tile instanceof TileRocketAssemblingMachine) ((TileRocketAssemblingMachine) tile).onRocketLand(event);
+            else if (tile instanceof TileLandingPad) ((TileLandingPad) tile).onRocketLand(event);
+            else if (tile instanceof TileRocketMonitoringStation) ((TileRocketMonitoringStation) tile).onLanded(event);
+        });
+    }
+
+    @SubscribeEvent
+    public void onRocketPreLaunch(RocketEvent.RocketPreLaunchEvent event) {
+        dispatchRocketEvent(event, tile -> {
+            if (tile instanceof TileLandingPad) ((TileLandingPad) tile).onRocketLaunch(event);
+        });
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onRocketPreLaunchMonitor(RocketEvent.RocketPreLaunchEvent event) {
+        dispatchRocketEvent(event, tile -> {
+            if (tile instanceof TileRocketMonitoringStation) ((TileRocketMonitoringStation) tile).onPreLaunch(event);
+        });
+    }
+
+    @SubscribeEvent
+    public void onRocketDismantle(RocketEvent.RocketDismantleEvent event) {
+        dispatchRocketEvent(event, tile -> {
+            if (tile instanceof TileLandingPad) ((TileLandingPad) tile).onRocketDismantle(event);
+        });
+    }
+
+    @SubscribeEvent
+    public void onRocketLaunch(RocketEvent.RocketLaunchEvent event) {
+        dispatchRocketEvent(event, tile -> {
+            if (tile instanceof TileRocketMonitoringStation) ((TileRocketMonitoringStation) tile).onLaunch(event);
+        });
+    }
+
+    @SubscribeEvent
+    public void onRocketOrbit(RocketEvent.RocketReachesOrbitEvent event) {
+        dispatchRocketEvent(event, tile -> {
+            if (tile instanceof TileRocketMonitoringStation) ((TileRocketMonitoringStation) tile).onOrbit(event);
+        });
+    }
+
+    @SubscribeEvent
+    public void onRocketDeorbit(RocketEvent.RocketDeOrbitingEvent event) {
+        dispatchRocketEvent(event, tile -> {
+            if (tile instanceof TileRocketMonitoringStation) ((TileRocketMonitoringStation) tile).onDeorbit(event);
+        });
+    }
+
+    @SubscribeEvent
+    public void onRocketAbort(RocketEvent.RocketAbortEvent event) {
+        dispatchRocketEvent(event, tile -> {
+            if (tile instanceof TileRocketMonitoringStation) ((TileRocketMonitoringStation) tile).onAbort(event);
+        });
+    }
 
     private static final ItemStack component = new ItemStack(AdvancedRocketryItems.itemUpgrade, 1, 4);
     public static long time = 0;
@@ -373,6 +475,8 @@ public class PlanetEventHandler {
 
     @SubscribeEvent
     public void worldUnloadEvent(WorldEvent.Unload event) {
+        (event.getWorld().isRemote ? clientRocketListeners : serverRocketListeners)
+                .removeIf(tile -> tile.getWorld() == event.getWorld());
         if (!event.getWorld().isRemote)
             AtmosphereHandler.unregisterWorld(event.getWorld().provider.getDimension());
     }

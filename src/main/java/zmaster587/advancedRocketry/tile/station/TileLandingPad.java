@@ -12,8 +12,7 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import zmaster587.advancedRocketry.event.PlanetEventHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import zmaster587.advancedRocketry.api.*;
 import zmaster587.advancedRocketry.api.RocketEvent.RocketDismantleEvent;
@@ -56,16 +55,21 @@ public class TileLandingPad extends TileInventoryHatch implements ILinkableTile,
         super(1);
         inventory.setCanInsertSlot(0, true);
         inventory.setCanExtractSlot(0, true);
-        MinecraftForge.EVENT_BUS.register(this);
         blockPos = new LinkedList<>();
         moduleNameTextbox = new ModuleTextBox(this, 40, 30, 60, 12, 9);
         name = "";
     }
 
     @Override
+    public void onLoad() {
+        super.onLoad();
+        PlanetEventHandler.registerRocketListener(this);
+    }
+
+    @Override
     public void invalidate() {
         super.invalidate();
-        MinecraftForge.EVENT_BUS.unregister(this);
+        PlanetEventHandler.unregisterRocketListener(this);
         for (HashedBlockPosition pos : blockPos) {
             TileEntity tile = world.getTileEntity(pos.getBlockPos());
             if (tile instanceof IMultiblock)
@@ -93,7 +97,7 @@ public class TileLandingPad extends TileInventoryHatch implements ILinkableTile,
     @Override
     public void onChunkUnload() {
         super.onChunkUnload();
-        MinecraftForge.EVENT_BUS.unregister(this);
+        PlanetEventHandler.unregisterRocketListener(this);
     }
 
     @Override
@@ -143,7 +147,6 @@ public class TileLandingPad extends TileInventoryHatch implements ILinkableTile,
         return false;
     }
 
-    @SubscribeEvent
     public void onRocketLand(RocketLandedEvent event) {
         if (world == null || world != event.world || !(event.getEntity() instanceof EntityRocketBase)) return;
         EntityRocketBase rocket = (EntityRocketBase) event.getEntity();
@@ -162,7 +165,6 @@ public class TileLandingPad extends TileInventoryHatch implements ILinkableTile,
         }
     }
 
-    @SubscribeEvent
     public void onRocketLaunch(RocketPreLaunchEvent event) {
         if (world == null || world != event.world || !(event.getEntity() instanceof EntityRocketBase)) return;
         ItemStack stack = getStackInSlot(0);
@@ -180,7 +182,6 @@ public class TileLandingPad extends TileInventoryHatch implements ILinkableTile,
         }
     }
 
-    @SubscribeEvent
     public void onRocketDismantle(RocketDismantleEvent event) {
         if (world == null || world != event.world || world.isRemote || world.provider == null) return;
         if (world.provider.getDimension() != ARConfiguration.getCurrentConfig().spaceDimId) return;

@@ -15,9 +15,7 @@ import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.eventhandler.EventPriority;
+import zmaster587.advancedRocketry.event.PlanetEventHandler;
 import zmaster587.libVulpes.tile.IMultiblock;
 import zmaster587.advancedRocketry.api.ARConfiguration;
 import zmaster587.advancedRocketry.api.EntityRocketBase;
@@ -121,8 +119,8 @@ public class TileRocketMonitoringStation extends TileEntity
     // Tabs (client-only)
     private static final byte TAB_SWITCH = 10;
     private ModuleTab tabModule;
-    // Event bus registration flag
-    private boolean registeredBus = false;
+    // Rocket listener registration flag
+    private boolean registeredRocketEvents = false;
 
     private void pushState() {
         if (world != null && !world.isRemote) {
@@ -210,7 +208,7 @@ public class TileRocketMonitoringStation extends TileEntity
         masterBlock.y = -1;
     }
 
-    // --- Lifecycle / bus registration ---
+    // --- Lifecycle / rocket listener registration ---
 
     @Override
     public void onLoad() {
@@ -218,10 +216,12 @@ public class TileRocketMonitoringStation extends TileEntity
 
         if (!world.isRemote) {
             // Only listen to rocket events if we actually have a rocket
-            if (linkedRocket != null && !registeredBus) {
-                MinecraftForge.EVENT_BUS.register(this);
-                registeredBus = true;
-                primeSnapshotsFromRocket(); // immediate stats/fuel refresh
+            if (linkedRocket != null) {
+                PlanetEventHandler.registerRocketListener(this);
+                if (!registeredRocketEvents) {
+                    registeredRocketEvents = true;
+                    primeSnapshotsFromRocket(); // immediate stats/fuel refresh
+                }
             }
 
             if (!initPower) {
@@ -250,9 +250,9 @@ public class TileRocketMonitoringStation extends TileEntity
     public void invalidate() {
         super.invalidate();
 
-        if (!world.isRemote && registeredBus) {
-            MinecraftForge.EVENT_BUS.unregister(this);
-            registeredBus = false;
+        if (!world.isRemote && registeredRocketEvents) {
+            PlanetEventHandler.unregisterRocketListener(this);
+            registeredRocketEvents = false;
         }
 
         // Tell the assembler that this infra is gone
@@ -278,9 +278,9 @@ public class TileRocketMonitoringStation extends TileEntity
     public void onChunkUnload() {
         super.onChunkUnload();
         // This tile remains linked across unload/reload and during flight/space.
-        if (!world.isRemote && registeredBus) {
-            MinecraftForge.EVENT_BUS.unregister(this);
-            registeredBus = false;
+        if (!world.isRemote && registeredRocketEvents) {
+            PlanetEventHandler.unregisterRocketListener(this);
+            registeredRocketEvents = false;
         }
     }
 
@@ -368,9 +368,9 @@ public class TileRocketMonitoringStation extends TileEntity
         this.linkedRocket = rocket;
 
         // Always listen to events on the server
-        if (!world.isRemote && !registeredBus) {
-            MinecraftForge.EVENT_BUS.register(this);
-            registeredBus = true;
+        if (!world.isRemote) {
+            PlanetEventHandler.registerRocketListener(this);
+            registeredRocketEvents = true;
         }
 
         if (!world.isRemote) {
@@ -514,7 +514,6 @@ public class TileRocketMonitoringStation extends TileEntity
 
     // --- Forge Rocket Events -> authorititative UI status (server -> client via TE update) ---
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onPreLaunch(RocketEvent.RocketPreLaunchEvent e) {
         if (world == null || world.isRemote) return;
         if (linkedRocket != null && e.getEntity() == linkedRocket) {
@@ -525,7 +524,6 @@ public class TileRocketMonitoringStation extends TileEntity
         }
     }
 
-    @SubscribeEvent
     public void onLaunch(RocketEvent.RocketLaunchEvent e) {
         if (world == null || world.isRemote) return;
         if (linkedRocket != null && e.getEntity() == linkedRocket) {
@@ -535,7 +533,6 @@ public class TileRocketMonitoringStation extends TileEntity
         }
     }
 
-    @SubscribeEvent
     public void onOrbit(RocketEvent.RocketReachesOrbitEvent e) {
         if (world == null || world.isRemote) return;
         if (linkedRocket != null && e.getEntity() == linkedRocket) {
@@ -545,7 +542,6 @@ public class TileRocketMonitoringStation extends TileEntity
         }
     }
 
-    @SubscribeEvent
     public void onDeorbit(RocketEvent.RocketDeOrbitingEvent e) {
         if (world == null || world.isRemote) return;
         if (linkedRocket != null && e.getEntity() == linkedRocket) {
@@ -555,7 +551,6 @@ public class TileRocketMonitoringStation extends TileEntity
         }
     }
 
-    @SubscribeEvent
     public void onLanded(RocketEvent.RocketLandedEvent e) {
         if (world == null || world.isRemote) return;
         if (linkedRocket != null && e.getEntity() == linkedRocket) {
@@ -565,7 +560,6 @@ public class TileRocketMonitoringStation extends TileEntity
         }
     }
 
-    @SubscribeEvent
     public void onAbort(RocketEvent.RocketAbortEvent e) {
         if (world == null || world.isRemote) return;
         if (linkedRocket != null && e.getEntity() == linkedRocket) {
