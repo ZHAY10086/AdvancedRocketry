@@ -192,6 +192,7 @@ item.biomeChanger.name=Biome Changer Remote
 item.weatherController.name=Weather Remote
 item.basicLaserGun.name=Basic Laser Gun
 item.beaconFinder.name=Beacon Finder
+item.rocketFinder.name=Rocket Finder
 item.thermite.name=Thermite
 item.hovercraft.name=Hovercraft
 item.satellite.opticaltelescope=Optical Telescope
@@ -295,6 +296,7 @@ advancement.suitedUp.desc=Wear a full spacesuit
 # Controls - options
 key.controls.advancedrocketry=Advanced Rocketry
 key.openRocketUI=Open Rocket GUI
+key.toggleRocketFinder=Toggle Rocket Finder
 key.toggleJetpack=Toggle Jetpack
 key.togglercs=Toggle RCS
 key.turnRocketLeft=Rotate Vehicle Left
@@ -439,6 +441,8 @@ tooltip.rocketblueprint.blocks=Blocks: %s
 tooltip.rocketblueprint.invalid=Unavailable or invalid design
 tooltip.rocketblueprint.blank=Blank blueprint
 tooltip.rocketblueprint.rocket=Rocket
+
+
 
 
 # Atmosphere detector GUI labels
@@ -1285,6 +1289,19 @@ tooltip.advancedrocketry.beaconfinder.shift.1=§fShows a HUD arrow toward AR bea
 tooltip.advancedrocketry.beaconfinder.shift.2=§dSlot: Helmet§7
 tooltip.advancedrocketry.beaconfinder.alt.1=Arrow offset is relative to your facing
 tooltip.advancedrocketry.beaconfinder.alt.2=Works only in AR dimensions that have registered beacons.
+
+# RocketFinder
+tooltip.advancedrocketry.rocketfinder=§5Space Suit Component
+tooltip.advancedrocketry.rocketfinder.shift.1=§fRemembers your rocket's position when you travel
+tooltip.advancedrocketry.rocketfinder.shift.2=§dSlot: Helmet§7
+tooltip.advancedrocketry.rocketfinder.alt.1=Disabled on Space Stations
+
+msg.rocketFinder.target=Rocket
+msg.rocketFinder.noTarget=No rocket position recorded
+msg.rocketFinder.offWorld=Rocket: %s
+msg.rocketFinder.nearby=Target nearby
+msg.rocketFinder.distance=%s m
+msg.rocketFinder.toggleHint=Press %s to toggle Rocket Finder
 
 # PressureTank
 tooltip.advancedrocketry.pressuretank.shift.1=§dSlot: Chest§7

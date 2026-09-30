@@ -27,6 +27,8 @@ public class KeyBindings {
     //static KeyBinding launch = new KeyBinding("Launch", Keyboard.KEY_SPACE, "key.controls." + Constants.modId);
     static KeyBinding toggleJetpack = new KeyBinding(LibVulpes.proxy.getLocalizedString("key.toggleJetpack"), Keyboard.KEY_X, LibVulpes.proxy.getLocalizedString("key.controls." + Constants.modId));
     static KeyBinding openRocketUI = new KeyBinding(LibVulpes.proxy.getLocalizedString("key.openRocketUI"), Keyboard.KEY_C, LibVulpes.proxy.getLocalizedString("key.controls." + Constants.modId));
+    static KeyBinding toggleRocketFinder = new KeyBinding("key.toggleRocketFinder", Keyboard.KEY_V, LibVulpes.proxy.getLocalizedString("key.controls." + Constants.modId));
+    private static boolean rocketFinderEnabled = true;
     static KeyBinding toggleRCS = new KeyBinding(LibVulpes.proxy.getLocalizedString("key.togglercs"), Keyboard.KEY_R, LibVulpes.proxy.getLocalizedString("key.controls." + Constants.modId));
     static KeyBinding turnRocketLeft = new KeyBinding(LibVulpes.proxy.getLocalizedString("key.turnRocketLeft"), Keyboard.KEY_A, LibVulpes.proxy.getLocalizedString("key.controls." + Constants.modId));
     static KeyBinding turnRocketRight = new KeyBinding(LibVulpes.proxy.getLocalizedString("key.turnRocketRight"), Keyboard.KEY_D, LibVulpes.proxy.getLocalizedString("key.controls." + Constants.modId));
@@ -38,6 +40,7 @@ public class KeyBindings {
         //ClientRegistry.registerKeyBinding(launch);
         ClientRegistry.registerKeyBinding(toggleJetpack);
         ClientRegistry.registerKeyBinding(openRocketUI);
+        ClientRegistry.registerKeyBinding(toggleRocketFinder);
         ClientRegistry.registerKeyBinding(toggleRCS);
         ClientRegistry.registerKeyBinding(turnRocketRight);
         ClientRegistry.registerKeyBinding(turnRocketLeft);
@@ -47,6 +50,14 @@ public class KeyBindings {
     //Getters for keybindings
     public static KeyBinding getOpenRocketUI() {
         return openRocketUI;
+    }
+
+    public static KeyBinding getToggleRocketFinder() {
+        return toggleRocketFinder;
+    }
+
+    public static boolean isRocketFinderEnabled() {
+        return rocketFinderEnabled;
     }
 
     @SubscribeEvent
@@ -104,6 +115,10 @@ public class KeyBindings {
                 PacketHandler.sendToServer(new PacketChangeKeyState(1, false));
             else
                 PacketHandler.sendToServer(new PacketChangeKeyState(0, false));
+        }
+
+        if (toggleRocketFinder.isPressed()) {
+            rocketFinderEnabled = !rocketFinderEnabled;
         }
 
         if (openRocketUI.isPressed()) {

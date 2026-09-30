@@ -50,6 +50,7 @@ public class AdvancedRocketryItems {
     public static Item itemBasicLaserGun;
     public static Item itemSpaceElevatorChip;
     public static Item itemBeaconFinder;
+    public static Item itemRocketFinder;
     public static Item itemThermite;
     public static Item itemHovercraft;
 }

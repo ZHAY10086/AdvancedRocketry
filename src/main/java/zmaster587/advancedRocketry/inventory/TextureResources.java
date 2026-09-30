@@ -42,6 +42,8 @@ public class TextureResources {
     public static final ResourceLocation jetpackIconEnabled = new ResourceLocation("advancedrocketry:textures/gui/jetpack.png");
     public static final ResourceLocation jetpackIconDisabled = new ResourceLocation("advancedrocketry:textures/gui/jetpackDisabled.png");
     public static final ResourceLocation jetpackIconHover = new ResourceLocation("advancedrocketry:textures/gui/jetpackHover.png");
+    public static final ResourceLocation rocketFinderIconEnabled = new ResourceLocation("advancedrocketry:textures/gui/rocketfinder.png");
+    public static final ResourceLocation rocketFinderIconDisabled = new ResourceLocation("advancedrocketry:textures/gui/rocketfinderdisabled.png");
     public static final ResourceLocation modularHelm = new ResourceLocation("advancedrocketry:textures/gui/space_helmet.png");
     public static final ResourceLocation modularChest = new ResourceLocation("advancedrocketry:textures/gui/space_chestplate.png");
     public static final ResourceLocation modularLegs = new ResourceLocation("advancedrocketry:textures/gui/space_leggings.png");

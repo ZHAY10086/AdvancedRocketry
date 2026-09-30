@@ -4,6 +4,11 @@
 - Fixed rocket event listeners causing memoryleak
 - Fixed LaunchPad dynamic textures wronlgy tilting 90 degrees in some cases
 - Improved station chip destination screens with clearer lists, landing-pad status, and controls
+- Fixed some stale status messages on Rocket Printer
+- Added Rocket Finder with remembered arrival rocket locations. Enabled by default, when component installed in helmet.
+
+
+
 
 2.2.16
 - Added Rocket 3D printing and Blueprint, save rocket designs and print blueprints from connected storage

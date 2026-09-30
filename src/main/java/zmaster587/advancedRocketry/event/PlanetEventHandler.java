@@ -61,6 +61,7 @@ import zmaster587.advancedRocketry.dimension.DimensionManager;
 import zmaster587.advancedRocketry.dimension.DimensionProperties;
 import zmaster587.advancedRocketry.dimension.watersourcelocked;
 import zmaster587.advancedRocketry.entity.EntityRocket;
+import zmaster587.advancedRocketry.item.ItemRocketFinder;
 import zmaster587.advancedRocketry.network.PacketConfigSync;
 import zmaster587.advancedRocketry.network.PacketDimInfo;
 import zmaster587.advancedRocketry.network.PacketSpaceStationInfo;
@@ -396,6 +397,7 @@ public class PlanetEventHandler {
                                         ent.entity2.posZ
                                 );
                                 ent.entity.startRiding(ent.entity2, true);
+                                ItemRocketFinder.recordRocketArrival(ent.entity, ent.entity2);
                             }
                             itr.remove();
                             continue;
@@ -424,6 +426,7 @@ public class PlanetEventHandler {
                         Entity rocket = newWorld.getEntityFromUuid(ent.entity2.getPersistentID());
                         if (rocket != null && moved != null) {
                             moved.startRiding(rocket, true);
+                            ItemRocketFinder.recordRocketArrival(moved, rocket);
                         }
                         itr.remove();
                     }
