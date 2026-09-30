@@ -21,10 +21,16 @@ import zmaster587.advancedRocketry.AdvancedRocketry;
 import zmaster587.advancedRocketry.api.ARConfiguration;
 import zmaster587.advancedRocketry.api.stations.ISpaceObject;
 import zmaster587.advancedRocketry.dimension.DimensionManager;
+import zmaster587.advancedRocketry.inventory.StationSelectorLayout;
+import zmaster587.advancedRocketry.inventory.GuiStationSelector;
 import zmaster587.advancedRocketry.inventory.modules.ModuleStellarBackground;
+import zmaster587.advancedRocketry.inventory.modules.ModuleStationSelectorActionButton;
+import zmaster587.advancedRocketry.inventory.modules.ModuleStationSelectorList;
+import zmaster587.advancedRocketry.inventory.modules.ModuleStationSelectorRow;
+import zmaster587.advancedRocketry.inventory.ContainerStationSelector;
+import zmaster587.advancedRocketry.network.PacketStationChipSync;
 import zmaster587.advancedRocketry.stations.SpaceObjectManager;
 import zmaster587.libVulpes.LibVulpes;
-import zmaster587.libVulpes.inventory.GuiHandler;
 import zmaster587.libVulpes.inventory.modules.*;
 import zmaster587.libVulpes.network.INetworkItem;
 import zmaster587.libVulpes.network.PacketHandler;
@@ -39,7 +45,7 @@ import java.util.List;
 /**
  * MetaData corresponds to the id
  */
-public class ItemStationChip extends ItemIdWithName implements IModularInventory, IButtonInventory, INetworkItem {
+public class ItemStationChip extends ItemIdWithName implements IModularInventory, IButtonInventory, INetworkItem, IGuiCallback {
 
     private static final String uuidIdentifier = "UUID";
     private static final String SELECTION_ID = "selectionId";
@@ -49,6 +55,7 @@ public class ItemStationChip extends ItemIdWithName implements IModularInventory
     private static final int BUTTON_ID_CLEAR = 0;
     private static final int BUTTON_ID_DELETE = 1;
     private static final int BUTTON_ID_ADD = 2;
+    private static final int PACKET_ID_SELECT = 3;
     private static final int BUTTON_ID_OFFSET = 5;
 
     public ItemStationChip() {
@@ -77,8 +84,11 @@ public class ItemStationChip extends ItemIdWithName implements IModularInventory
     @Nonnull
     public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand hand) {
         ItemStack stack = playerIn.getHeldItem(hand);
-        if (!playerIn.world.isRemote && !stack.isEmpty() && playerIn.isSneaking())
-            playerIn.openGui(LibVulpes.instance, GuiHandler.guiId.MODULARCENTEREDFULLSCREEN.ordinal(), worldIn, -1, -1, -1);
+        if (!playerIn.world.isRemote && hand == EnumHand.MAIN_HAND
+                && !stack.isEmpty() && playerIn.isSneaking())
+            playerIn.openGui(AdvancedRocketry.instance,
+                    zmaster587.advancedRocketry.inventory.GuiHandler.guiId.StationChip.ordinal(),
+                    worldIn, -1, -1, -1);
 
         return super.onItemRightClick(worldIn, playerIn, hand);
     }
@@ -86,44 +96,60 @@ public class ItemStationChip extends ItemIdWithName implements IModularInventory
     @Override
     public List<ModuleBase> getModules(int ID, EntityPlayer player) {
         List<ModuleBase> modules = new LinkedList<>();
-        final int offset_all = 96;
-
         ItemStack stack = player.getHeldItem(EnumHand.MAIN_HAND);
 
-        if (!stack.isEmpty()) {
+        if (!stack.isEmpty() && stack.getItem() == this) {
             modules.add(new ModuleStellarBackground(0, 0, zmaster587.libVulpes.inventory.TextureResources.starryBG));
-
-
-            List<ModuleBase> list2 = new LinkedList<>();
-            ModuleButton btnAdd = new ModuleButton(172 - offset_all, 18 * 2 + 28, BUTTON_ID_ADD, LibVulpes.proxy.getLocalizedString("msg.label.add"), this, zmaster587.advancedRocketry.inventory.TextureResources.buttonGeneric, 128, 18);
-            ModuleButton btnClear = new ModuleButton(172 - offset_all, 18 * 4 + 28, BUTTON_ID_CLEAR, LibVulpes.proxy.getLocalizedString("msg.label.clear"), this, zmaster587.advancedRocketry.inventory.TextureResources.buttonGeneric, 128, 18);
-            ModuleButton btnDelete = new ModuleButton(172 - offset_all, 18 * 3 + 28, BUTTON_ID_DELETE, LibVulpes.proxy.getLocalizedString("msg.label.delete"), this, zmaster587.advancedRocketry.inventory.TextureResources.buttonGeneric, 128, 18);
-
-            modules.add(btnClear);
-            modules.add(btnDelete);
-            modules.add(btnAdd);
-
             // Get effective dimension
             int dimId = DimensionManager.getEffectiveDimId(player.world, new BlockPos(player)).getId();
             List<LandingLocation> list = getLandingLocations(stack, dimId);
-
             int selectedId = getSelectionId(stack, dimId);
+            StationSelectorLayout layout = StationSelectorLayout.forPlayer(player, true);
+            modules.add(new ModuleText(layout.x, layout.y,
+                    LibVulpes.proxy.getLocalizedString("msg.stationselector.chip.title"), 0xFFFFFF));
+
+            List<ModuleBase> rows = new LinkedList<>();
             int i = 0;
-            ModuleButton button;
             for (LandingLocation pos : list) {
-                button = new ModuleButton(0, i * 18, i + BUTTON_ID_OFFSET, pos.toString(), this, zmaster587.advancedRocketry.inventory.TextureResources.buttonGeneric, 128, 18);
-                list2.add(button);
-
-                if (i == selectedId)
-                    button.setColor(0xFF22FF22);
-                else
-                    button.setColor(0xFFFF2222);
-
+                boolean selected = i == selectedId;
+                rows.add(new ModuleStationSelectorRow(i * 22, i + BUTTON_ID_OFFSET,
+                        layout.width, pos.name,
+                        String.format("%.0f, %.0f, %.0f", pos.location.x,
+                                pos.location.y, pos.location.z),
+                        LibVulpes.proxy.getLocalizedString(selected ? "msg.stationselector.selected"
+                                : "msg.stationselector.saved"), selected, false, this));
                 i++;
             }
+            modules.add(new ModuleStationSelectorList(layout.x, layout.y + 23,
+                    layout.width, layout.listHeight, rows));
+            if (rows.isEmpty())
+                modules.add(new ModuleText(layout.x + 7, layout.y + 34,
+                        LibVulpes.proxy.getLocalizedString("msg.stationselector.empty"), 0xD5DCE5));
 
-            ModuleContainerPan pan = new ModuleContainerPan(25 - offset_all, 50, list2, new LinkedList<>(), null, 512, 256, 0, -48, 258, 256);
-            modules.add(pan);
+            int controlsY = layout.y + 29 + layout.listHeight;
+            modules.add(new ModuleText(layout.x, controlsY + 3,
+                    LibVulpes.proxy.getLocalizedString("msg.stationselector.name"), 0xD5DCE5));
+            ModuleTextBox name = new ModuleTextBox(this, layout.x + 44, controlsY,
+                    layout.width - 44, 18, 32);
+            if (player.world.isRemote) name.setText(getTempName(stack));
+            modules.add(name);
+
+            int buttonWidth = (layout.width - 8) / 3;
+            ModuleButton add = new ModuleStationSelectorActionButton(layout.x, controlsY + 25, BUTTON_ID_ADD,
+                    LibVulpes.proxy.getLocalizedString("msg.label.add"), this,
+                    zmaster587.advancedRocketry.inventory.TextureResources.buttonGeneric, buttonWidth, 18);
+            add.setEnabled(player.world.provider.getDimension() == dimId);
+            modules.add(add);
+            ModuleButton delete = new ModuleStationSelectorActionButton(layout.x + buttonWidth + 4, controlsY + 25,
+                    BUTTON_ID_DELETE, LibVulpes.proxy.getLocalizedString("msg.label.delete"), this,
+                    zmaster587.advancedRocketry.inventory.TextureResources.buttonGeneric, buttonWidth, 18);
+            delete.setEnabled(selectedId > 0 && selectedId < list.size());
+            modules.add(delete);
+            ModuleButton clear = new ModuleStationSelectorActionButton(layout.x + 2 * (buttonWidth + 4), controlsY + 25,
+                    BUTTON_ID_CLEAR, LibVulpes.proxy.getLocalizedString("msg.label.clear"), this,
+                    zmaster587.advancedRocketry.inventory.TextureResources.buttonGeneric, buttonWidth, 18);
+            clear.setEnabled(list.size() > 1);
+            modules.add(clear);
         }
         return modules;
     }
@@ -138,19 +164,46 @@ public class ItemStationChip extends ItemIdWithName implements IModularInventory
     public void onInventoryButtonPressed(int buttonId) {
         ItemStack stack = Minecraft.getMinecraft().player.getHeldItem(EnumHand.MAIN_HAND);
         if (!stack.isEmpty() && stack.getItem() == this) {
-            PacketHandler.sendToServer(new PacketItemModifcation(this, Minecraft.getMinecraft().player, (byte) (buttonId)));
+            if (buttonId < BUTTON_ID_OFFSET
+                    && (buttonId < BUTTON_ID_CLEAR || buttonId > BUTTON_ID_ADD)) return;
+            if (!(Minecraft.getMinecraft().currentScreen instanceof GuiStationSelector)
+                    || !((GuiStationSelector) Minecraft.getMinecraft().currentScreen).beginChipAction()) return;
+            if (buttonId >= BUTTON_ID_OFFSET) {
+                NBTTagCompound selection = new NBTTagCompound();
+                selection.setInteger("selection", buttonId - BUTTON_ID_OFFSET);
+                PacketHandler.sendToServer(new PacketItemModifcation(this, Minecraft.getMinecraft().player,
+                        (byte) PACKET_ID_SELECT, selection));
+            } else if (buttonId >= BUTTON_ID_CLEAR && buttonId <= BUTTON_ID_ADD) {
+                PacketHandler.sendToServer(new PacketItemModifcation(this, Minecraft.getMinecraft().player, (byte) buttonId));
+            }
         }
     }
 
     private void setTempName(@Nonnull ItemStack stack, String string) {
-        if (stack.hasTagCompound())
-            stack.getTagCompound().setString(TMPNAME, string);
+        if (!stack.hasTagCompound()) stack.setTagCompound(new NBTTagCompound());
+        stack.getTagCompound().setString(TMPNAME, string);
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void onModuleUpdated(ModuleBase module) {
+        ItemStack stack = Minecraft.getMinecraft().player.getHeldItem(EnumHand.MAIN_HAND);
+        if (stack.getItem() == this && module instanceof ModuleTextBox)
+            setTempName(stack, ((ModuleTextBox) module).getText());
     }
 
     private String getTempName(@Nonnull ItemStack stack) {
         if (stack.hasTagCompound())
             return stack.getTagCompound().getString(TMPNAME);
         return "";
+    }
+
+    /** Keep text being edited locally when the server returns chip changes. */
+    public void applyServerTagPreservingDraft(@Nonnull ItemStack stack, NBTTagCompound serverTag) {
+        String draft = getTempName(stack);
+        NBTTagCompound updated = serverTag == null ? new NBTTagCompound() : serverTag.copy();
+        updated.setString(TMPNAME, draft);
+        stack.setTagCompound(updated);
     }
 
     @Override
@@ -178,42 +231,53 @@ public class ItemStationChip extends ItemIdWithName implements IModularInventory
     public void useNetworkData(EntityPlayer player, Side side, byte id, NBTTagCompound nbt, @Nonnull ItemStack stack) {
         if (!player.world.isRemote) {
             int dimId = DimensionManager.getEffectiveDimId(player.world, new BlockPos(player)).getId();
-            if (id >= BUTTON_ID_OFFSET) {
-                setSelectionId(stack, dimId, id - BUTTON_ID_OFFSET);
+            if (id == PACKET_ID_SELECT) {
+                if (!nbt.hasKey("selection", 3)) return;
+                int selection = nbt.getInteger("selection");
+                if (selection >= 0 && selection < getLandingLocations(stack, dimId).size())
+                    setSelectionId(stack, dimId, selection);
             } else if (id == BUTTON_ID_DELETE) {
                 int selection = getSelectionId(stack, dimId);
 
                 //Can't delete "Last"
                 if (selection > 0) {
                     List<LandingLocation> locs = getLandingLocations(stack, dimId);
-                    if (selection < locs.size())
+                    if (selection < locs.size()) {
                         locs.remove(selection);
-                    setLandingLocations(stack, dimId, locs);
+                        setLandingLocations(stack, dimId, locs);
+                        setSelectionId(stack, dimId, 0);
+                    }
                 }
             } else if (id == BUTTON_ID_CLEAR) {
                 //Can't delete "Last"
                 List<LandingLocation> locs = getLandingLocations(stack, dimId);
                 List<LandingLocation> locs2 = new LinkedList<>();
-                locs2.add(locs.get(0));
-                setLandingLocations(stack, dimId, locs2);
+                if (!locs.isEmpty()) {
+                    locs2.add(locs.get(0));
+                    setLandingLocations(stack, dimId, locs2);
+                    setSelectionId(stack, dimId, 0);
+                }
             } else if (id == BUTTON_ID_ADD) {
                 // this will be false if on a space station, do not set on space station
                 if (player.getEntityWorld().provider.getDimension() == dimId) {
+                    setTempName(stack, nbt.getString(TMPNAME));
                     List<LandingLocation> locs = getLandingLocations(stack, dimId);
                     BlockPos pos = player.getPosition();
                     locs.add(new LandingLocation(nbt.getString(TMPNAME), pos.getX(), pos.getY(), pos.getZ()));
                     setLandingLocations(stack, dimId, locs);
                 }
             }
-            //Re-open the UI
-            player.closeScreen();
-            player.openGui(AdvancedRocketry.instance, GuiHandler.guiId.MODULARFULLSCREEN.ordinal(), player.world, -1, -1, -1);
+            if (player.openContainer instanceof ContainerStationSelector
+                    && ((ContainerStationSelector) player.openContainer).getRocketEntityId() == -1)
+                PacketHandler.sendToPlayer(new PacketStationChipSync(
+                        player.openContainer.windowId, player.inventory.currentItem,
+                        stack.getTagCompound()), player);
         }
     }
 
     @Override
     public boolean canInteractWithContainer(EntityPlayer player) {
-        return player.getHeldItem(player.getActiveHand()).getItem() == this;
+        return player.getHeldItem(EnumHand.MAIN_HAND).getItem() == this;
     }
 
     public int getSelectionId(@Nonnull ItemStack stack, int dimid) {
@@ -223,7 +287,7 @@ public class ItemStationChip extends ItemIdWithName implements IModularInventory
                 nbt = nbt.getCompoundTag("dimid" + dimid);
                 int size = getLandingLocations(stack, dimid).size();
                 int selectedId = nbt.getInteger(SELECTION_ID);
-                return size > selectedId ? selectedId : 0;
+                return selectedId >= 0 && size > selectedId ? selectedId : 0;
             }
         }
         return 0;
@@ -354,11 +418,11 @@ public class ItemStationChip extends ItemIdWithName implements IModularInventory
                     LandingLocation loc = getTakeoffCoords(stack, spaceObject.getOrbitingPlanetId());
                     if (loc != null) {
                         Vector3F<Float> vec = loc.location;
-                        list.add(LibVulpes.proxy.getLocalizedString("tooltip.advancedrocketry.stationchip.namelabel") + loc.name);
+                        list.add(LibVulpes.proxy.getLocalizedString("tooltip.advancedrocketry.stationchip.namelabel") + " " + loc.name);
                         list.add("X: " + vec.x);
                         list.add("Z: " + vec.z);
                     } else {
-                        list.add(LibVulpes.proxy.getLocalizedString("tooltip.advancedrocketry.stationchip.namelabel") + "N/A");
+                        list.add(LibVulpes.proxy.getLocalizedString("tooltip.advancedrocketry.stationchip.namelabel") + " " + "N/A");
                         list.add("X: N/A");
                         list.add("Z: N/A");
                     }
@@ -367,11 +431,11 @@ public class ItemStationChip extends ItemIdWithName implements IModularInventory
                 LandingLocation loc = getTakeoffCoords(stack, player.provider.getDimension());
                 if (loc != null) {
                     Vector3F<Float> vec = loc.location;
-                    list.add(LibVulpes.proxy.getLocalizedString("tooltip.advancedrocketry.stationchip.namelabel") + loc.name);
+                    list.add(LibVulpes.proxy.getLocalizedString("tooltip.advancedrocketry.stationchip.namelabel") + " " + loc.name);
                     list.add("X: " + vec.x);
                     list.add("Z: " + vec.z);
                 } else {
-                    list.add(LibVulpes.proxy.getLocalizedString("tooltip.advancedrocketry.stationchip.namelabel") + "N/A");
+                    list.add(LibVulpes.proxy.getLocalizedString("tooltip.advancedrocketry.stationchip.namelabel") + " " + "N/A");
                     list.add("X: N/A");
                     list.add("Z: N/A");
                 }

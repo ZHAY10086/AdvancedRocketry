@@ -81,6 +81,7 @@ import zmaster587.advancedRocketry.tile.infrastructure.TileFuelingStation;
 import zmaster587.advancedRocketry.tile.multiblock.machine.*;
 import zmaster587.advancedRocketry.tile.satellite.TileSatelliteBuilder;
 import zmaster587.advancedRocketry.tile.TileStationAssembler;
+import zmaster587.advancedRocketry.inventory.GuiStationSelector;
 import zmaster587.libVulpes.inventory.GuiModular;
 
 import mezz.jei.api.IRecipeRegistry;
@@ -247,6 +248,7 @@ public class ARPlugin implements IModPlugin {
 
     @Override
     public void register(IModRegistry registry) {
+        registry.addGuiScreenHandler(GuiStationSelector.class, gui -> null);
         //debug
         //zmaster587.advancedRocketry.AdvancedRocketry.logger.info("[JEI][GasGiants] register called");
         registry.addAdvancedGuiHandlers(new IAdvancedGuiHandler<GuiModular>() {

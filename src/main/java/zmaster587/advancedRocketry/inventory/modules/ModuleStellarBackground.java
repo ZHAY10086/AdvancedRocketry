@@ -22,7 +22,9 @@ public class ModuleStellarBackground extends ModuleBase {
             gui.mc.getTextureManager().bindTexture(this.icon);
             gui.drawTexturedModalRect(0, 0, 0, 0, gui.width, gui.height);
             gui.mc.getTextureManager().bindTexture(TextureResources.genericStation);
-            gui.drawTexturedModalRect(256, 64, 0, 0, 256, 256);
+            gui.drawTexturedModalRect(Math.max(0, gui.width - 256),
+                    Math.max(0, (gui.height - 256) / 2), 0, 0, 256, 256);
+
         }
     }
 }

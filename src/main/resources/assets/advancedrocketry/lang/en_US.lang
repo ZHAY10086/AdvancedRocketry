@@ -826,6 +826,19 @@ msg.orbitalregistry.text.system=System:
 msg.orbitalregistry.text.system.none=None
 msg.orbitalregistry.text.system.unknown=Unknown
 
+# Station chip destination selectors
+msg.stationselector.rocket.title=Station Landing Pads
+msg.stationselector.chip.title=Station Chip Destinations
+msg.stationselector.name=Name:
+msg.stationselector.unnamed=Unnamed
+msg.stationselector.auto=Automatic landing
+msg.stationselector.selected=Selected
+msg.stationselector.available=Available
+msg.stationselector.saved=Saved
+msg.stationselector.occupied=Occupied
+msg.stationselector.empty=No saved destinations
+msg.stationselector.station.unavailable=Waiting for station data...
+
 # SatelliteDetails power fields
 msg.orbitalregistry.text.sat.pwrgen=Pwr Gen:
 msg.orbitalregistry.text.sat.pwrstore=Pwr Store:

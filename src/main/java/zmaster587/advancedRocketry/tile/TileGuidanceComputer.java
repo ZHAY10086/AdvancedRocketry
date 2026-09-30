@@ -114,7 +114,10 @@ public class TileGuidanceComputer extends TileInventoryHatch implements IModular
         if (myLoc == null)
             return null;
 
-        return ((SpaceStationObject) spaceObject).getPadAtLocation(myLoc);
+        StationLandingLocation location = ((SpaceStationObject) spaceObject).getPadAtLocation(myLoc);
+        if (location == null)
+            landingLoc.remove(stationId);
+        return location;
     }
 
     public long getTargetSatellite() {
@@ -226,11 +229,12 @@ public class TileGuidanceComputer extends TileInventoryHatch implements IModular
     private Vector3F<Float> getStationLocation(ISpaceObject spaceObject, boolean commit) {
         HashedBlockPosition vec = null;
         if (spaceObject instanceof SpaceStationObject) {
-            if (landingLoc.get(spaceObject.getId()) != null) {
-                vec = landingLoc.get(spaceObject.getId());
+            StationLandingLocation location = getLandingLocation(spaceObject.getId());
+            if (location != null) {
+                vec = location.getPos();
 
                 if (commit)
-                    ((SpaceStationObject) spaceObject).getPadAtLocation(landingLoc.get(spaceObject.getId())).setOccupied(true);
+                    location.setOccupied(true);
             } else
                 vec = spaceObject.getNextLandingPad(commit);
         }

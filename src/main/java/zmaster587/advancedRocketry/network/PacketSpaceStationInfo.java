@@ -6,6 +6,9 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.EnumFacing;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+import zmaster587.advancedRocketry.inventory.GuiStationSelector;
 import zmaster587.advancedRocketry.api.stations.ISpaceObject;
 import zmaster587.advancedRocketry.dimension.DimensionManager;
 import zmaster587.advancedRocketry.dimension.DimensionProperties;
@@ -99,6 +102,7 @@ public class PacketSpaceStationInfo extends BasePacket {
     }
 
     @Override
+    @SideOnly(Side.CLIENT)
     public void executeClient(EntityPlayer thePlayer) {
         if (isBeingDeleted) {
             if (DimensionManager.getInstance().isDimensionCreated(stationNumber)) {
@@ -126,7 +130,7 @@ public class PacketSpaceStationInfo extends BasePacket {
                 ((SpaceStationObject) spaceObject).hasWarpCores = hasWarpCores;
             }
         }
-
+        GuiStationSelector.onStationUpdated(stationNumber);
     }
 
     @Override

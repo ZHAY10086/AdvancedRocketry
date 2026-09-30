@@ -3,6 +3,7 @@
 - Fixed a bug where fuelstation could cause a memoryleak
 - Fixed rocket event listeners causing memoryleak
 - Fixed LaunchPad dynamic textures wronlgy tilting 90 degrees in some cases
+- Improved station chip destination screens with clearer lists, landing-pad status, and controls
 
 2.2.16
 - Added Rocket 3D printing and Blueprint, save rocket designs and print blueprints from connected storage

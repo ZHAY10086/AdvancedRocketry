@@ -63,10 +63,13 @@ import zmaster587.advancedRocketry.dimension.DimensionManager;
 import zmaster587.advancedRocketry.dimension.DimensionProperties;
 import zmaster587.advancedRocketry.event.PlanetEventHandler;
 import zmaster587.advancedRocketry.inventory.IPlanetDefiner;
+import zmaster587.advancedRocketry.inventory.StationSelectorLayout;
 import zmaster587.advancedRocketry.inventory.TextureResources;
 import zmaster587.advancedRocketry.inventory.modules.ModuleBrokenPart;
 import zmaster587.advancedRocketry.inventory.modules.ModulePlanetSelector;
 import zmaster587.advancedRocketry.inventory.modules.ModuleStellarBackground;
+import zmaster587.advancedRocketry.inventory.modules.ModuleStationSelectorList;
+import zmaster587.advancedRocketry.inventory.modules.ModuleStationSelectorRow;
 import zmaster587.advancedRocketry.inventory.modules.ModuleRocketFuelProgress;
 import zmaster587.advancedRocketry.item.ItemAsteroidChip;
 import zmaster587.advancedRocketry.item.ItemPackedStructure;
@@ -143,7 +146,7 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
     private boolean turningLeft, turningRight, turningUp, turningDownforWhat;
     private String errorStr;
     private long lastErrorTime = Long.MIN_VALUE;
-    private ModuleText landingPadDisplayText;
+    private final Map<Integer, HashedBlockPosition> stationPadChoices = new HashMap<>();
     private SatelliteBase satellite;
     private int autoDescendTimer; // Is this value even used?
     //0 to 100, 100 is fully rotated and ready to go, 0 is normal mode
@@ -180,8 +183,6 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
 
         lastWorldTickTicked = p_i1582_1_.getTotalWorldTime();
         autoDescendTimer = 5000; // Is this value even used?
-        landingPadDisplayText = new ModuleText(256, 16, "", 0x00FF00, 2f);
-        landingPadDisplayText.setColor(0x00ff00);
 
         spacePosition = new SpacePosition();
         spacePosition.star = DimensionManager.getInstance().getStar(0);
@@ -197,8 +198,6 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
         isInFlight = false;
         lastWorldTickTicked = world.getTotalWorldTime();
         autoDescendTimer = 5000; // Is this value even used?
-        landingPadDisplayText = new ModuleText(256, 16, "", 0x00FF00, 2f);
-        landingPadDisplayText.setColor(0x00ff00);
     }
 
     // PlanetSelector fixing methods
@@ -443,7 +442,7 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
                         StationLandingLocation location = storage.getGuidanceComputer().getLandingLocation(spaceObject.getId());
 
                         if (location != null) {
-                            displayStr = displayStr + "\n" + LibVulpes.proxy.getLocalizedString("msg.entity.rocket.pad") + location;
+                            displayStr = displayStr + "\n" + LibVulpes.proxy.getLocalizedString("msg.entity.rocket.pad") + " " + location;
                         }
                     }
                 }
@@ -2731,7 +2730,16 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
         } else if (id == PacketType.REVERTWORLD.ordinal()) {
             AdvancedRocketry.proxy.changeClientPlayerWorld(this.world);
         } else if (id == PacketType.OPENPLANETSELECTION.ordinal()) {
-            player.openGui(LibVulpes.instance, GuiHandler.guiId.MODULARFULLSCREEN.ordinal(), player.world, this.getEntityId(), -1, 0);
+            ItemStack guidanceChip = storage.getGuidanceComputer() != null
+                    ? storage.getGuidanceComputer().getStackInSlot(0) : ItemStack.EMPTY;
+            if (!guidanceChip.isEmpty() && guidanceChip.getItem() instanceof ItemStationChip
+                    && ItemStationChip.getUUID(guidanceChip) != 0)
+                player.openGui(AdvancedRocketry.instance,
+                        zmaster587.advancedRocketry.inventory.GuiHandler.guiId.StationLandingPad.ordinal(),
+                        player.world, this.getEntityId(), -1, 0);
+            else
+                player.openGui(LibVulpes.instance, GuiHandler.guiId.MODULARFULLSCREEN.ordinal(),
+                        player.world, this.getEntityId(), -1, 0);
         } else if (id == PacketType.SENDPLANETDATA.ordinal()) {
             ItemStack stack = storage.getGuidanceComputer().getStackInSlot(0);
             if (!stack.isEmpty() && stack.getItem() == AdvancedRocketryItems.itemPlanetIdChip) {
@@ -2769,13 +2777,19 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
             releaseDestinationPreload();
         } else if (id == PacketType.SENDSPACEPOS.ordinal()) {
             this.spacePosition.readFromNBT(nbt);
-        } else if (id >= STATION_LOC_OFFSET + BUTTON_ID_OFFSET) {
-            int id2 = id - (STATION_LOC_OFFSET + BUTTON_ID_OFFSET) - 1;
-            setDestLandingPad(id2);
+        } else if (id == PacketType.SELECT_STATION_PAD.ordinal()) {
+            boolean accepted = setDestLandingPad(nbt);
+            if (world.isRemote && accepted) refreshStationSelector();
 
-            //propagate change back to the clients
-            if (!world.isRemote)
-                PacketHandler.sendToPlayersTrackingEntity(new PacketEntity(this, id), this);
+            // Acknowledge the requester once, even if they are not tracking the rocket.
+            if (!world.isRemote && accepted) {
+                PacketHandler.sendToPlayer(new PacketEntity(this, id, nbt), player);
+                for (EntityPlayer trackingPlayer : ((WorldServer) world).getEntityTracker().getTrackingPlayers(this)) {
+                    if (trackingPlayer != player) {
+                        PacketHandler.sendToPlayer(new PacketEntity(this, id, nbt), trackingPlayer);
+                    }
+                }
+            }
         } else if (id > BUTTON_ID_OFFSET) {
             TileEntity tile = storage.getGUITiles().get(id - BUTTON_ID_OFFSET - tilebuttonOffset);
 
@@ -2788,29 +2802,45 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
         }
     }
 
-    private void setDestLandingPad(int padIndex) {
+    @SideOnly(Side.CLIENT)
+    private void refreshStationSelector() {
+        zmaster587.advancedRocketry.inventory.GuiStationSelector.onSelectionUpdated(this);
+    }
+
+    private boolean setDestLandingPad(NBTTagCompound selection) {
+        if (storage == null || storage.getGuidanceComputer() == null || selection == null) return false;
+        boolean accepted = false;
         ItemStack slot0 = storage.getGuidanceComputer().getStackInSlot(0);
         int uuid;
         //Station location select
         if (!slot0.isEmpty() && slot0.getItem() instanceof ItemStationChip && (uuid = ItemStationChip.getUUID(slot0)) != 0) {
+            if (!selection.hasKey("stationId", 3) || selection.getInteger("stationId") != uuid
+                    || !selection.hasKey("automatic", 1))
+                return false;
             ISpaceObject spaceObject = SpaceObjectManager.getSpaceManager().getSpaceStation(uuid);
 
             if (spaceObject instanceof SpaceStationObject) {
 
-                if (padIndex == -1) {
+                if (selection.getBoolean("automatic")) {
                     storage.getGuidanceComputer().setLandingLocation(uuid, null);
+                    accepted = true;
                 } else {
 
-                    StationLandingLocation location = ((SpaceStationObject) spaceObject).getLandingPads().get(padIndex);
-                    if (location != null && !location.getOccupied())
+                    StationLandingLocation location = selection.hasKey("padX", 3) && selection.hasKey("padZ", 3)
+                            ? ((SpaceStationObject) spaceObject).getPadAtLocation(
+                                    new HashedBlockPosition(selection.getInteger("padX"), 0,
+                                            selection.getInteger("padZ")))
+                            : null;
+                    // Availability is validated by the server; clients apply its acknowledgement.
+                    if (location != null && (world.isRemote || !location.getOccupied())) {
                         storage.getGuidanceComputer().setLandingLocation(uuid, location);
+                        accepted = true;
+                    }
                 }
             }
 
-            StationLandingLocation location = storage.getGuidanceComputer().getLandingLocation(uuid);
-            String noneLabel = LibVulpes.proxy.getLocalizedString("msg.entity.rocket.none");
-            landingPadDisplayText.setText(location != null ? location.toString() : noneLabel);
         }
+        return accepted;
     }
 
     @Override
@@ -2926,34 +2956,44 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
             //Station location select
             if (!slot0.isEmpty() && slot0.getItem() instanceof ItemStationChip && (uuid = ItemStationChip.getUUID(slot0)) != 0) {
                 ISpaceObject spaceObject = SpaceObjectManager.getSpaceManager().getSpaceStation(uuid);
+                stationPadChoices.clear();
 
                 modules.add(new ModuleStellarBackground(0, 0, zmaster587.libVulpes.inventory.TextureResources.starryBG));
 
-                if (spaceObject == null)
+                if (!(spaceObject instanceof SpaceStationObject)) {
+                    StationSelectorLayout layout = StationSelectorLayout.forPlayer(player, false);
+                    modules.add(new ModuleText(layout.x + 7, layout.y + 23,
+                            LibVulpes.proxy.getLocalizedString("msg.stationselector.station.unavailable"),
+                            0xD5DCE5));
                     return modules;
-
-                List<ModuleBase> list2 = new LinkedList<>();
-                ModuleButton button = new ModuleButton(0, 0, STATION_LOC_OFFSET, LibVulpes.proxy.getLocalizedString("msg.entity.rocket.clear"), this, TextureResources.buttonGeneric, 72, 18);
-                list2.add(button);
-
-                int i = 1;
-                for (StationLandingLocation pos : ((SpaceStationObject) spaceObject).getLandingPads()) {
-                    button = new ModuleButton(0, i * 18, i + STATION_LOC_OFFSET, pos.toString(), this, TextureResources.buttonGeneric, 72, 18);
-                    list2.add(button);
-
-                    if (pos.getOccupied())
-                        button.setColor(0xFF0000);
-
-                    i++;
                 }
 
-                ModuleContainerPan pan = new ModuleContainerPan(25, 25, list2, new LinkedList<>(), null, 256, 256, 0, -48, 258, 256);
-                modules.add(pan);
-
                 StationLandingLocation location = storage.getGuidanceComputer().getLandingLocation(uuid);
+                StationSelectorLayout layout = StationSelectorLayout.forPlayer(player, false);
+                modules.add(new ModuleText(layout.x, layout.y,
+                        LibVulpes.proxy.getLocalizedString("msg.stationselector.rocket.title"), 0xFFFFFF));
+                List<ModuleBase> rows = new LinkedList<>();
+                rows.add(new ModuleStationSelectorRow(0, STATION_LOC_OFFSET,
+                        layout.width, LibVulpes.proxy.getLocalizedString("msg.stationselector.auto"), "",
+                        LibVulpes.proxy.getLocalizedString(location == null
+                                ? "msg.stationselector.selected" : "msg.stationselector.available"),
+                        location == null, false, this));
 
-                landingPadDisplayText.setText(location != null ? location.toString() : LibVulpes.proxy.getLocalizedString("msg.entity.rocket.none"));
-                modules.add(landingPadDisplayText);
+                int i = 1;
+                for (StationLandingLocation pad : ((SpaceStationObject) spaceObject).getLandingPads()) {
+                    boolean selected = location != null && location.getPos().equals(pad.getPos());
+                    stationPadChoices.put(i - 1, pad.getPos());
+                    rows.add(new ModuleStationSelectorRow(i * 22, i + STATION_LOC_OFFSET,
+                            layout.width, pad.getName(),
+                            pad.getPos().x + ", " + pad.getPos().z,
+                            LibVulpes.proxy.getLocalizedString(selected ? "msg.stationselector.selected"
+                                    : pad.getOccupied() ? "msg.stationselector.occupied"
+                                    : "msg.stationselector.available"),
+                            selected, pad.getOccupied(), this));
+                    i++;
+                }
+                modules.add(new ModuleStationSelectorList(layout.x, layout.y + 23,
+                        layout.width, layout.listHeight, rows));
             } else {
                 DimensionProperties properties = DimensionManager.getEffectiveDimId(world, this.getPosition());
                 while (properties.getParentProperties() != null) properties = properties.getParentProperties();
@@ -3084,7 +3124,24 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
                             0
                     );
                 } else {
-                    PacketHandler.sendToServer(new PacketEntity(this, (byte) (buttonId + BUTTON_ID_OFFSET)));
+                    NBTTagCompound selection = new NBTTagCompound();
+                    ItemStack chip = storage.getGuidanceComputer() != null
+                            ? storage.getGuidanceComputer().getStackInSlot(0) : ItemStack.EMPTY;
+                    if (!chip.isEmpty() && chip.getItem() instanceof ItemStationChip
+                            && ItemStationChip.getUUID(chip) != 0) {
+                        int stationId = ItemStationChip.getUUID(chip);
+                        selection.setInteger("stationId", stationId);
+                        int padIndex = buttonId - STATION_LOC_OFFSET - 1;
+                        selection.setBoolean("automatic", padIndex == -1);
+                        if (padIndex >= 0) {
+                            HashedBlockPosition pad = stationPadChoices.get(padIndex);
+                            if (pad == null) return;
+                            selection.setInteger("padX", pad.x);
+                            selection.setInteger("padZ", pad.z);
+                        }
+                    } else return;
+                    PacketHandler.sendToServer(new PacketEntity(this,
+                            (byte) PacketType.SELECT_STATION_PAD.ordinal(), selection));
                 }
         }
     }
@@ -3153,6 +3210,7 @@ public class EntityRocket extends EntityRocketBase implements INetworkEntity, IM
         TOGGLE_RCS,
         TURNUPDATE,
         ABORTLAUNCH,
-        SENDSPACEPOS
+        SENDSPACEPOS,
+        SELECT_STATION_PAD
     }
 }
