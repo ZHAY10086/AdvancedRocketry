@@ -551,7 +551,7 @@ public class TileRocketPrinter extends TileInventoryHatch implements ITickable, 
 
     @Override
     public List<ModuleBase> getModules(int ID, EntityPlayer player) {
-        if (world != null && !world.isRemote && !printing && !saving && (status == READY || status == NO_ASSEMBLER || status == NO_ROCKET || status == DETECTED || status == BLUEPRINT_READY)) {
+        if (world != null && !world.isRemote && !printing && !saving && (status == READY || status == NO_ASSEMBLER || status == NO_ROCKET || status == DETECTED || status == BLUEPRINT_READY || status == PAD_BUSY || status == COMPLETE)) {
             TileRocketAssemblingMachine assembler = getAssembler();
             if (assembler == null) setStatus(NO_ASSEMBLER);
             else if (!padLoaded(assembler)) setStatus(CHUNKS_UNLOADED);
