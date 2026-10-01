@@ -158,6 +158,7 @@ public class TileRocketPrinter extends TileInventoryHatch implements ITickable, 
         super.setInventorySlotContents(slot, stack);
         if (world != null && !world.isRemote) {
             if (printing || saving) stop(PAUSED);
+            else refreshIdleStatus();
             markDirty();
         }
         updateActionButton();
@@ -166,6 +167,7 @@ public class TileRocketPrinter extends TileInventoryHatch implements ITickable, 
     @Override
     public void onInventoryUpdated(int slot) {
         if (world != null && !world.isRemote && (printing || saving)) stop(PAUSED);
+        else refreshIdleStatus();
         if (world != null) { markDirty(); super.onInventoryUpdated(slot); }
         updateActionButton();
     }
@@ -216,6 +218,34 @@ public class TileRocketPrinter extends TileInventoryHatch implements ITickable, 
 
     private boolean hasBlueprintData(ItemStack stack) {
         return stack.hasTagCompound() && stack.getTagCompound().hasKey("RocketBlueprint");
+    }
+
+    private void refreshIdleStatus() {
+        if (world == null || world.isRemote || printing || saving) return;
+        TileRocketAssemblingMachine assembler = getAssembler();
+        if (assembler == null) { setStatus(NO_ASSEMBLER); return; }
+        if (!padLoaded(assembler)) { setStatus(CHUNKS_UNLOADED); return; }
+        ItemStack stack = getStackInSlot(0);
+        if (!isItemValidForSlot(0, stack)) { setStatus(NO_BLUEPRINT); return; }
+        RocketBlueprint blueprint = RocketBlueprint.read(stack);
+        if (blueprint == null && hasBlueprintData(stack)) { setStatus(INVALID); return; }
+        AxisAlignedBB bounds = assembler.getRocketPadBounds(world, assembler.getPos());
+        if (bounds == null) { setStatus(BAD_PAD); return; }
+        if (assembler.isScanning()) { setStatus(PAD_BUSY); return; }
+        if (blueprint == null) {
+            if (assembler.getLinkedRocket() != null) setStatus(DETECTED);
+            else setStatus(assembler.hasRocketOnPad(bounds) ? PAD_BUSY : NO_ROCKET);
+            return;
+        }
+        if (assembler.hasRocketOnPad(bounds)) { setStatus(PAD_BUSY); return; }
+        if (blueprint.sizeX > (int) bounds.maxX - (int) bounds.minX + 1
+                || blueprint.sizeZ > (int) bounds.maxZ - (int) bounds.minZ + 1
+                || blueprint.sizeY > (int) bounds.maxY - (int) bounds.minY + 1) { setStatus(BAD_PAD); return; }
+        for (IBlockState state : blueprint.palette) if (RocketBlueprint.material(state).isEmpty()) {
+            setStatus(UNSUPPORTED);
+            return;
+        }
+        setStatus(BLUEPRINT_READY);
     }
 
     private void updateActionButton() {
@@ -299,7 +329,7 @@ public class TileRocketPrinter extends TileInventoryHatch implements ITickable, 
             int packed = y << 8 | x << 4 | z;
             while (entry < job.cells.length && job.cells[entry] < packed && job.cells[entry] >> 8 == y) entry += 2;
             BlockPos target = origin.add(x, y, z);
-            if (!world.isBlockLoaded(target)) { stop(PAUSED); return false; }
+            if (!world.isBlockLoaded(target)) { stop(CHUNKS_UNLOADED); return false; }
             IBlockState currentState = world.getBlockState(target);
             if (entry < job.cells.length && job.cells[entry] == packed) {
                 IBlockState wanted = job.palette[job.cells[entry + 1]];
@@ -551,14 +581,8 @@ public class TileRocketPrinter extends TileInventoryHatch implements ITickable, 
 
     @Override
     public List<ModuleBase> getModules(int ID, EntityPlayer player) {
-        if (world != null && !world.isRemote && !printing && !saving && (status == READY || status == NO_ASSEMBLER || status == NO_ROCKET || status == DETECTED || status == BLUEPRINT_READY || status == PAD_BUSY || status == COMPLETE)) {
-            TileRocketAssemblingMachine assembler = getAssembler();
-            if (assembler == null) setStatus(NO_ASSEMBLER);
-            else if (!padLoaded(assembler)) setStatus(CHUNKS_UNLOADED);
-            else if (assembler.getLinkedRocket() != null) setStatus(DETECTED);
-            else if (RocketBlueprint.read(getStackInSlot(0)) != null) setStatus(BLUEPRINT_READY);
-            else setStatus(NO_ROCKET);
-        }
+        // Results stay visible after an operation, then current conditions are checked on reopening.
+        refreshIdleStatus();
         List<ModuleBase> modules = new LinkedList<>();
         modules.add(new ModulePower(160, 21, this));
         modules.add(new ModuleProgress(149, 21, 0, TileRocketAssemblingMachine.verticalProgressBar, this));
@@ -661,8 +685,17 @@ public class TileRocketPrinter extends TileInventoryHatch implements ITickable, 
     }
 
     @Override
-    public SPacketUpdateTileEntity getUpdatePacket() {
-        NBTTagCompound tag = new NBTTagCompound();
+    public NBTTagCompound getUpdateTag() {
+        return writeVisualData(super.getUpdateTag());
+    }
+
+    @Override
+    public void handleUpdateTag(NBTTagCompound tag) {
+        super.handleUpdateTag(tag);
+        if (tag.hasKey("status")) readVisualData(tag);
+    }
+
+    private NBTTagCompound writeVisualData(NBTTagCompound tag) {
         tag.setByte("status", status);
         tag.setInteger("frameFrom", frameFromY);
         tag.setInteger("frameTo", frameToY);
@@ -672,12 +705,20 @@ public class TileRocketPrinter extends TileInventoryHatch implements ITickable, 
         if (pad != null) {
             tag.setIntArray("pad", new int[]{(int) pad.minX, (int) pad.minY, (int) pad.minZ, (int) pad.maxX, (int) pad.maxY, (int) pad.maxZ});
         }
-        return new SPacketUpdateTileEntity(pos, 0, tag);
+        return tag;
+    }
+
+    @Override
+    public SPacketUpdateTileEntity getUpdatePacket() {
+        return new SPacketUpdateTileEntity(pos, 0, writeVisualData(new NBTTagCompound()));
     }
 
     @Override
     public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-        NBTTagCompound tag = pkt.getNbtCompound();
+        readVisualData(pkt.getNbtCompound());
+    }
+
+    private void readVisualData(NBTTagCompound tag) {
         byte value = tag.getByte("status");
         status = value >= READY && value <= NO_POWER ? value : INVALID;
         frameFromY = tag.getInteger("frameFrom");
